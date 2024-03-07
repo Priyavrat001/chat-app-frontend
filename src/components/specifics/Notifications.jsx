@@ -1,11 +1,9 @@
 import React,{memo} from 'react'
-// import { sampleNotifications } from '../../constants/sampleData'
+import { sampleNotifications } from '../../constants/sampleData'
 import { Avatar, Button, Dialog, DialogTitle, ListItem, Stack, Typography } from '@mui/material'
 
 
 const Notifications = () => {
-
-  // const {name, avatar} = sender;
 
 const friendRequestHandler = ({_id, accept})=>{
   console.log(_id)
@@ -22,11 +20,11 @@ const friendRequestHandler = ({_id, accept})=>{
       >
         <DialogTitle>Notifications</DialogTitle>
 
-        {/* {
+        {
           sampleNotifications.length>0?(
             sampleNotifications.map((i)=> <NotificationsItems sender={i.sender} _id={i._id} handler={friendRequestHandler} key={i._id}/>)
           ):<Typography textAlign={"center"}>0 Notifications</Typography>
-        } */}
+        }
       </Stack>
     </Dialog>
   )
@@ -36,35 +34,34 @@ const friendRequestHandler = ({_id, accept})=>{
 
 const NotificationsItems = memo(({sender, _id, handler})=>{
   return (
-    // <ListItem>
-        {/* <Stack direction={"row"} alignItems={"center"} spacing={"1rem"} width={"100%"}>
+    <ListItem>
+        <Stack direction={"row"} alignItems={"center"} spacing={"1rem"} width={"100%"}>
             <Avatar
             />
 
             <Typography
                 variant="body1"
                 sx={{
-                    flexGrow: 1,
+                    flexGrow: "1",
                     display: "-webkit-box",
                     WebkitLineClamp: "vertical",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
+                    overflow:"hidden",
+                    textOverflow:"ellipsis"
                 }}
-            >{`${sender.name} sent to you a friend request`}</Typography>
+            >{`${sender.name} sent a request`}</Typography>
 
             <Stack direction={{
               xs:"column",
-              sm:"row"
             }}>
               <Button onClick={()=>handler({_id, accept:true})}>
                 Accept
               </Button>
-              <Button color='red' onClick={()=>handler({_id, accept:false})}>
+              <Button color='error' onClick={()=>handler({_id, accept:false})}>
                 Reject
               </Button>
             </Stack>
         </Stack>
-    </ListItem> */}
+    </ListItem> 
   )
 })
 
