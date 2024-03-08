@@ -3,6 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectRoute from './components/auth/ProtectRoute';
 import { LayoutLoader } from './components/layouts/Loaders';
 
+
+// importing admin pages
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+
 // importing all pages routes
 const Home = lazy(() => import("./pages/Home"));
 const About = lazy(() => import("./pages/About"));
@@ -18,7 +23,7 @@ const App = () => {
 
   return (
     <Router>
-      <Suspense fallback={<LayoutLoader/>}>
+      <Suspense fallback={<LayoutLoader />}>
         <Routes>
 
           <Route element={<ProtectRoute user={user} />}>
@@ -44,6 +49,8 @@ const App = () => {
             </ProtectRoute>
           } />
 
+          <Route path='/admin' element={<AdminLogin />} />
+          <Route path='/admin/dashboard' element={<Dashboard />} />
 
           <Route path='*' element={
             <PageNotFound />

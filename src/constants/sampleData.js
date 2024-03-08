@@ -9,16 +9,17 @@ export const sampleChats = [{
 
 },
 {
-    avatar: [
-        "https://img.freepik.com/free-photo/man-white_1368-3544.jpg",
-    ],
-    name: "Jonson baby powder",
-    _id: "bestpowder",
+    avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+    name: "Jonson powder",
+    _id: "jonson",
     groupChat: false,
     members: ["1", "2"],
 
 
-}]
+},
+
+
+]
 
 export const sampleUsers = [{
     avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],

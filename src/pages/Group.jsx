@@ -159,6 +159,8 @@ const Group = () => {
           },
         }}
         sm={4}
+        overflow={"auto"}
+        height={"100%"}
         bgcolor={"#f0f4f8"}
       >
         <GroupList myGroup={sampleChats} chatId={chatId} />
@@ -170,7 +172,7 @@ const Group = () => {
         position: "relative",
         padding: "1rem 3rem",
 
-      }} width={"100%"}>
+      }}>
         {IconBtn}
         {groupName && <>
 
@@ -246,7 +248,11 @@ const Group = () => {
 
 
 const GroupList = ({ w = "100%", myGroup = [], chatId }) => (
-  <Stack width={w}>
+  <Stack width={w} 
+  sx={{
+    bgcolor:"#f0f4f8",
+  }}
+  >
     {myGroup.length > 0 ? myGroup.map((group) => <GroupListItems group={group} chatId={chatId} key={group._id} />) :
       (<Typography textAlign={"center"} padding="1rem">No Group</Typography>)}
   </Stack>
