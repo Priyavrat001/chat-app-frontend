@@ -7,6 +7,9 @@ import { LayoutLoader } from './components/layouts/Loaders';
 // importing admin pages
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const MessageMangement = lazy(() => import("./pages/admin/MessageMangement"));
+const ChatManagement = lazy(() => import("./pages/admin/ChatManagement"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 
 // importing all pages routes
 const Home = lazy(() => import("./pages/Home"));
@@ -51,6 +54,9 @@ const App = () => {
 
           <Route path='/admin' element={<AdminLogin />} />
           <Route path='/admin/dashboard' element={<Dashboard />} />
+          <Route path='/admin/users' element={<UserManagement />} />
+          <Route path='/admin/chats' element={<ChatManagement />} />
+          <Route path='/admin/messages' element={<MessageMangement />} />
 
           <Route path='*' element={
             <PageNotFound />
