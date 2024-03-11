@@ -91,3 +91,25 @@ export const sampleMessage = [{
     createdAt:"2024-02-12T10:41:30.630Z"
 }
 ];
+
+
+export const dashboardData = {
+    users:[
+        {
+            avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+            name: "Jonson powder",
+            _id: "jonson",
+            username:"jonson baby",
+            friends:40,
+            groups:23
+        },
+        {
+            avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+            name: "Jonson baby powder",
+            _id: "jonson baby powder",
+            username:"baby powder",
+            friends:20,
+            groups:2
+        },
+    ]
+}

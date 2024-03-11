@@ -5,7 +5,7 @@ import { AdminPanelSettings as AdminPanelSettingsIcon, Group as GroupIcon, Messa
 import moment from 'moment/moment'
 import { CurvedButton, SearchField } from '../../components/styles/StyledComponents'
 import WighetComponent from '../../components/WighetComponent'
-import { DonaldChart, LineChart } from '../../components/specifics/admin/Charts'
+import { DoughnutChart, LineChart } from '../../components/specifics/admin/Charts'
 
 const Dashboard = () => {
 
@@ -63,7 +63,15 @@ const Dashboard = () => {
         {
           AppBar
         }
-        <Stack direction={"row"} flexGrow={"wrap"} spacing={"2rem"}>
+        <Stack direction={{
+          xs:"column",
+          lg:"row"
+        }} flexGrow={"wrap"} justifyContent={"center"} alignItems={{
+          xs:"center",
+          lg:"stretch"
+        }} sx={{
+          gap:"2rem"
+        }}>
           <Paper
             sx={{
               padding: "2rem 3.5rem",
@@ -73,7 +81,7 @@ const Dashboard = () => {
             }}
           >
             <Typography variant='h4' margin={"2rem 0"}>Last Messages</Typography>
-            <LineChart/>
+            <LineChart vlaue={[121,121,887,54]}/>
           </Paper>
 
           <Paper
@@ -91,10 +99,9 @@ const Dashboard = () => {
               position: "relative",
               width: "100%",
               maxWidth: "25rem",
-              height:"25rem"
             }}
           >
-            <DonaldChart/>
+            <DoughnutChart labels={["Single Chats", "Group Chats"]} vlaue={[23,66]}/>
 
             <Stack
               position={"absolute"}
