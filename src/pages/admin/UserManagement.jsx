@@ -17,9 +17,8 @@ const columns = [
   headerName:"Avatar",
   headerClassName:"table-header",
   width:200,
-  renderCall:(params)=>(
-    <Avatar alt={params.row.name} src={params.row.avatar}/>
-  )
+  renderCell:(params)=><Avatar alt={params.row.name} src={params.row.avatar}/>
+  
 },
   {
   field:"name",

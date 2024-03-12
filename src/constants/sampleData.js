@@ -111,5 +111,57 @@ export const dashboardData = {
             friends:20,
             groups:2
         },
-    ]
+    ],
+
+    chats:[{
+        avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+            name: "Jonson baby powder",
+            _id: "jonson baby powder best powder",
+            members:[{_id:"1", avatar:"https://img.freepik.com/free-photo/man-white_1368-3544.jpg", _id:"2", avatar:"https://img.freepik.com/free-photo/man-white_1368-3544.jpg"}],
+            groupChat:false,
+            totalMembers:2,
+            totalMessages:20,
+            creator:{
+                avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+                name: "Jonson baby powder",
+            },
+
+    },{
+        avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+            name: "Jonson baby powder",
+            _id: "jonson baby powder",
+            members:[{_id:"3", avatar:"https://img.freepik.com/free-photo/man-white_1368-3544.jpg", _id:"4", avatar:"https://img.freepik.com/free-photo/man-white_1368-3544.jpg"}],
+            groupChat:false,
+            totalMembers:2,
+            totalMessages:20,
+            creator:{
+                avatar: ["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+                name: "Jonson baby powder",
+            },
+
+    }],
+
+    messages:[{
+        attachments:["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+        content:"content message 1",
+        _id:"fdsfs",
+        sender:{
+            _id:"user._id",
+            name:"chareman"
+        },
+        chat:"chatId",
+        createdAt:"2024 monday"
+    },
+    {
+        attachments:["https://img.freepik.com/free-photo/man-white_1368-3544.jpg"],
+        content:"content message 1",
+        _id:"fdsfs",
+        sender:{
+            _id:"user._id",
+            name:"chareman"
+        },
+        chat:"chatId",
+        createdAt:"2024 monday"
+    },
+]
 }
