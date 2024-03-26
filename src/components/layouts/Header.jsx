@@ -1,8 +1,14 @@
-import React, { Suspense, lazy, useState } from 'react'
+import { Add as AddIcon, Group as GroupIcon, Logout as LogoutIcon, Menu as MenuIcon, Notifications as NotificationsIcon, Search as SearchIcon } from "@mui/icons-material";
 import { AppBar, Backdrop, Box, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
-import { orange } from '../../constants/color';
-import { Menu as MenuIcon, Search as SearchIcon, Add as AddIcon, Group as GroupIcon, Logout as LogoutIcon, Notifications as NotificationsIcon } from "@mui/icons-material";
+import axios from 'axios';
+import React, { Suspense, lazy, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { orange } from '../../constants/color';
+import { server } from "../../constants/config";
+import { userNotExists } from '../../redux/reducers/auth';
+import { setIsMobile, setIsSearch } from '../../redux/reducers/misc';
 
 const SearchDialog = lazy(()=>import("../specifics/Search"))
 const NotifactionsDialog = lazy(()=>import("../specifics/Notifications"))
@@ -10,18 +16,20 @@ const NewGroupDialog = lazy(()=>import("../specifics/NewGroups"))
 
 const Header = () => {
 
-    const [ismobile, setIsMobile] = useState(false)
-    const [isSearch, setIsSearch] = useState(false)
-    const [isNewGroup, setIsNewGroup] = useState(false)
-    const [isNotification, setIsNotification] = useState(false)
+    const dispatch = useDispatch();
+
+    const {isSearch} = useSelector(state=>state.misc);
+
+    const [isNewGroup, setIsNewGroup] = useState(false);
+    const [isNotification, setIsNotification] = useState(false);
 
     const navigate = useNavigate();
 
     const handleMobile = () => {
-        setIsMobile((prev)=>!prev)
+        dispatch(setIsMobile(true))
     }
     const openSearch = () => {
-        setIsSearch((prev)=>!prev)
+        dispatch(setIsSearch(true))
     }
     const openNewGroup = () => {
         setIsNewGroup((prev)=>!prev)
@@ -29,8 +37,19 @@ const Header = () => {
     const navigateToGroup = () => {
         navigate("/groups")
     }
-    const logoutHandler = () => {
-        console.log("Loggin out");
+    const logoutHandler = async() => {
+
+        try {
+            const {data} = await axios.get(`${server}/user/logout`,{withCredentials:true});
+            
+            dispatch(userNotExists());
+
+            toast.success(data.message);
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Something went wrong");
+        }
+
     }
     const openNotification = ()=>{
         setIsNotification((prev)=>!prev)

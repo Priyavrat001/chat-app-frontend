@@ -1,37 +1,93 @@
-import React, { useState } from 'react'
-import { Container, Paper, Typography, TextField, Button, Stack, Avatar, IconButton } from "@mui/material";
+import { useFileHandler, useInputValidation } from "6pp";
 import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
+import { Avatar, Button, Container, IconButton, Paper, Stack, TextField, Typography } from "@mui/material";
+import axios from 'axios';
+import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
 import { VisualyHiddenInput } from '../components/styles/StyledComponents';
-import { useInputValidation, useFileHandler } from "6pp";
+import { server } from '../constants/config';
+import { userExists } from '../redux/reducers/auth';
 import { userNameValidators } from '../utils/validators';
+
 
 const Login = () => {
 
     const [isLogin, setIsLogin] = useState(true);
 
+    const dispatch = useDispatch();
+
     const name = useInputValidation("");
-    const userName = useInputValidation("", userNameValidators);
+    const username = useInputValidation("", userNameValidators);
     const password = useInputValidation();
     const bio = useInputValidation("");
     const avatar = useFileHandler("single");
 
     const toggleLogin = () => setIsLogin((prev) => !prev);
 
-    const handleLoginSubmit = (e) => {
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
-        console.log("loginForm submited")
+
+        const config = {
+            withCredentials: true,
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+
+        try {
+            const { data } = await axios.post(`${server}/user/login`, {
+                username: username.value,
+                password: password.value
+
+            },
+                config
+            );
+
+            dispatch(userExists(data.user));
+
+            toast.success(data.message);
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Something went wrong");
+        }
     }
-    const handleRegisterSubmit = (e) => {
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault()
-        console.log("registerForm submited")
+
+        const formData = new FormData();
+
+        formData.append("avatar", avatar.file);
+        formData.append("name", name.value);
+        formData.append("username", username.value);
+        formData.append("password", password.value);
+        formData.append("bio", bio.value);
+
+        const config = {
+            withCredentials: true,
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        };
+
+        try {
+            const { data } = await axios.post(`${server}/user/new`, formData, config)
+
+            dispatch(userExists(data.user));
+
+            toast.success(data.message);
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Something went wrong");
+        }
     }
+
     return (
         <div
             style={{
                 background: "linear-gradient(rgba(200, 200, 200, 0.5), rgba(120, 110, 220, 0.5))",
                 width: "100%",
                 height: "112vh",
-                
+
             }}
         >
             <Container component={"main"} maxWidth="xs"
@@ -59,11 +115,11 @@ const Login = () => {
                                     <TextField
                                         required
                                         fullWidth
-                                        label="Username"
+                                        label="username"
                                         margin='normal'
                                         variant='outlined'
-                                        value={userName.value}
-                                        onChange={userName.changeHandler}
+                                        value={username.value}
+                                        onChange={username.changeHandler}
                                     />
                                     <TextField
                                         required
@@ -180,18 +236,18 @@ const Login = () => {
                                     <TextField
                                         required
                                         fullWidth
-                                        label="Username"
+                                        label="username"
                                         margin='normal'
                                         variant='outlined'
-                                        value={userName.value}
-                                        onChange={userName.changeHandler}
+                                        value={username.value}
+                                        onChange={username.changeHandler}
                                     />
 
                                     {
-                                        userName.error && (
+                                        username.error && (
                                             <Typography color={"error"}
                                                 variant='caption'>
-                                                {userName.error}
+                                                {username.error}
                                             </Typography>
                                         )
                                     }

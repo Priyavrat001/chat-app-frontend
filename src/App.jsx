@@ -1,7 +1,12 @@
-import React, { Suspense, lazy } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectRoute from './components/auth/ProtectRoute';
 import { LayoutLoader } from './components/layouts/Loaders';
+import axios from "axios";
+import { server } from './constants/config';
+import { useDispatch, useSelector } from 'react-redux';
+import { userExists, userNotExists } from './redux/reducers/auth';
+import {Toaster} from "react-hot-toast";
 
 
 // importing admin pages
@@ -22,9 +27,22 @@ const PageNotFound = lazy(() => import("./pages/PageNotFound"));
 
 const App = () => {
 
-  const user = true;
+  const { user, loader } = useSelector(state => state.auth);
 
-  return (
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    axios
+      .get(`${server}/user/myprofile`, {
+        withCredentials:true
+      })
+      .then(({data}) => dispatch(userExists(data.user)))
+      .catch((err) => dispatch(userNotExists()));
+
+  }, [dispatch]);
+
+
+  return loader ? <LayoutLoader />: (
     <Router>
       <Suspense fallback={<LayoutLoader />}>
         <Routes>
@@ -63,6 +81,7 @@ const App = () => {
           } />
         </Routes>
       </Suspense>
+      <Toaster position='bottom-center'/>
     </Router>
   )
 }
