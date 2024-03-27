@@ -10,6 +10,7 @@ import ChatList from '../specifics/ChatList'
 import Profile from '../specifics/Profile'
 import Header from './Header'
 import { LayoutLoader } from "./Loaders"
+import { getSocket } from '../../socket'
 
 const AppLayout = () => (WrappedComponent) => {
   return (props) => {
@@ -17,8 +18,12 @@ const AppLayout = () => (WrappedComponent) => {
     const { id } = useParams();
 
     const dispatch = useDispatch();
+    const socket = getSocket();
+
+    console.log(socket);
 
     const {isMobileMenu } = useSelector(state=>state.misc)
+    const {user } = useSelector(state=>state.auth);
 
     const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
 
@@ -76,7 +81,7 @@ const AppLayout = () => (WrappedComponent) => {
               backgroundColor: "rgba(0,0,0,0.85)"
             }}
             height={"100%"}
-          ><Profile /></Grid>
+          ><Profile user={user}/></Grid>
         </Grid>
 
       </>

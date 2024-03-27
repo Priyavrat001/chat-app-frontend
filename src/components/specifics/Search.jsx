@@ -7,27 +7,22 @@ import { useLazySearchUsersQuery, useSendFriendRequestMutation } from '../../red
 import { setIsSearch } from '../../redux/reducers/misc';
 import UserItems from '../shared/UserItems';
 import { toast } from "react-hot-toast";
+import { useAsyncMution } from "../../hooks/hook";
 
 
 const Search = () => {
 
   const {isSearch} = useSelector(state=>state.misc);
   const [searchUsers] = useLazySearchUsersQuery();
-  const [sendFriendRequest] = useSendFriendRequestMutation();
+  const [sendFriendRequest, isLoadingSendFriendRequest] = useAsyncMution(useSendFriendRequestMutation);
 
   const search = useInputValidation("");
   const dispatch = useDispatch();
 
-  let isLoadingSendFriendRequest = false;
-
   const [users, setUsers] = useState([])
 
   const addHandler = async(id)=>{
-    try {
-      await sendFriendRequest("Sending friend request...", { userId: id });
-    } catch (error) {
-      console.log(error)
-    }
+    await sendFriendRequest("Sending friend request...", {userId:id})
     
   }
 

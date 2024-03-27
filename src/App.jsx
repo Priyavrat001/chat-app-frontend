@@ -23,6 +23,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Group = lazy(() => import("./pages/Group"));
 const Chat = lazy(() => import("./pages/Chat"));
 const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+import {SocketProvier} from "./socket"
 
 
 const App = () => {
@@ -47,7 +48,9 @@ const App = () => {
       <Suspense fallback={<LayoutLoader />}>
         <Routes>
 
-          <Route element={<ProtectRoute user={user} />}>
+          <Route element={<SocketProvider>
+            <ProtectRoute user={user} />
+          </SocketProvider>}>
 
             <Route path='/' element={
               <Home />

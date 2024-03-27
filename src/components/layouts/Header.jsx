@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { orange } from '../../constants/color';
 import { server } from "../../constants/config";
 import { userNotExists } from '../../redux/reducers/auth';
-import { setIsMobile, setIsSearch } from '../../redux/reducers/misc';
+import { setIsMobile, setIsNotification, setIsSearch } from '../../redux/reducers/misc';
 
 const SearchDialog = lazy(()=>import("../specifics/Search"))
 const NotifactionsDialog = lazy(()=>import("../specifics/Notifications"))
@@ -18,10 +18,9 @@ const Header = () => {
 
     const dispatch = useDispatch();
 
-    const {isSearch} = useSelector(state=>state.misc);
+    const {isSearch, isNotifactions} = useSelector(state=>state.misc);
 
     const [isNewGroup, setIsNewGroup] = useState(false);
-    const [isNotification, setIsNotification] = useState(false);
 
     const navigate = useNavigate();
 
@@ -52,7 +51,7 @@ const Header = () => {
 
     }
     const openNotification = ()=>{
-        setIsNotification((prev)=>!prev)
+        return dispatch(setIsNotification(true));
     }
     return (
         <>
@@ -124,7 +123,7 @@ const Header = () => {
             }
 
             {
-                isNotification && (
+                isNotifactions && (
                     <Suspense fallback={<Backdrop open/>}>
 
                         <NotifactionsDialog/>
