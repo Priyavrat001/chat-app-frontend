@@ -7,7 +7,7 @@ const api = createApi({
     baseQuery: fetchBaseQuery({
         baseUrl: `${server}/`
     }),
-    tagTypes: ["Chat", "User"],
+    tagTypes: ["Chat", "User", "Message"],
 
     endpoints: (builder) => ({
         myChats: builder.query({
@@ -17,6 +17,7 @@ const api = createApi({
             }),
             providesTags: ["Chat"],
         }),
+
         searchUsers:builder.query({
             query: (name) => ({
                 url: `user/search?name=${name}`,
@@ -24,6 +25,7 @@ const api = createApi({
             }),
             providesTags: ["User"],
         }),
+
         sendFriendRequest: builder.mutation({
             query: (data) => ({
               url: "user/sendrequest",
@@ -33,6 +35,7 @@ const api = createApi({
             }),
             invalidatesTags: ["User"],
         }),
+
         getNotificaions: builder.query({
             query: () => ({
               url: "user/notification",
@@ -40,6 +43,7 @@ const api = createApi({
             }),
             keepUnusedDataFor: 0,
         }),
+
         acceptFriendRequest: builder.mutation({
             query: (data) => ({
               url: "user/acceptrequest",
@@ -48,6 +52,39 @@ const api = createApi({
               body: data,
             }),
             invalidatesTags: ["Chat"],
+        }),
+
+        chatDetails: builder.query({
+            query: ({chatId, populate = false}) => {
+
+                let url = `chat/${chatId}`;
+
+                if(populate) url += "?populate=true"
+
+
+                return{
+                    url: "user/notification",
+                    credentials: "include",
+                  }
+            },
+            providesTags: ["Chat"],
+        }),
+
+        getMessages: builder.query({
+            query: ({chatId, page}) => ({
+                url:`chat/message/${chatId}?page=${page}`,
+                credentials: "include",
+              }),
+            providesTags: ["Message"],
+        }),
+
+        sendAttachment: builder.mutation({
+            query: (data) => ({
+                url:"chat/message",
+                method:"POST",
+                credentials: "include",
+                body:data
+              }),
         }),
     })
 });
@@ -59,5 +96,8 @@ export const {
     useLazySearchUsersQuery,
     useSendFriendRequestMutation,
     useGetNotificaionsQuery,
-    useAcceptFriendRequestMutation
+    useAcceptFriendRequestMutation,
+    useChatDetailsQuery,
+    useGetMessagesQuery,
+    useSendAttachmentMutation
 } = api;

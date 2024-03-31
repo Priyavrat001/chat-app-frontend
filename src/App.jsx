@@ -7,6 +7,7 @@ import { server } from './constants/config';
 import { useDispatch, useSelector } from 'react-redux';
 import { userExists, userNotExists } from './redux/reducers/auth';
 import {Toaster} from "react-hot-toast";
+import { SocketProvider } from './socket';
 
 
 // importing admin pages
@@ -23,7 +24,6 @@ const Login = lazy(() => import("./pages/Login"));
 const Group = lazy(() => import("./pages/Group"));
 const Chat = lazy(() => import("./pages/Chat"));
 const PageNotFound = lazy(() => import("./pages/PageNotFound"));
-import {SocketProvier} from "./socket"
 
 
 const App = () => {

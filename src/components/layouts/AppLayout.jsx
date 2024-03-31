@@ -20,8 +20,6 @@ const AppLayout = () => (WrappedComponent) => {
     const dispatch = useDispatch();
     const socket = getSocket();
 
-    console.log(socket);
-
     const {isMobileMenu } = useSelector(state=>state.misc)
     const {user } = useSelector(state=>state.auth);
 
@@ -71,7 +69,7 @@ const AppLayout = () => (WrappedComponent) => {
             md={5}
             lg={6}
           >
-            <WrappedComponent {...props} />
+            <WrappedComponent {...props} chatId={id}/>
           </Grid>
           <Grid item md={4}
             lg={3}

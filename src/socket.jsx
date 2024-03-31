@@ -1,19 +1,17 @@
-import { useContext, useMemo } from "react";
+import { createContext, useMemo, useContext } from "react";
 import io from "socket.io-client";
+import { server } from "./constants/config";
 
 const SocketContext = createContext();
 
-const getSocket = useContext(SocketContext);
+const getSocket = () => useContext(SocketContext);
 
-const SocketProvider = ({children})=>{
+const SocketProvider = ({ children }) => {
+  const socket = useMemo(() => io("http://localhost:4000", { withCredentials: true }), []);
 
-const socket = useMemo(() => io("http://localhost:4000", {withCredentials:true}), [second]);
-
-    return (
-        <SocketContext.Provider value={socket}>
-            {children}
-        </SocketContext.Provider>
-    )
+  return (
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+  );
 };
 
-export {SocketProvider, getSocket};
+export { SocketProvider, getSocket };
