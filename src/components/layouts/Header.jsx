@@ -1,5 +1,5 @@
 import { Add as AddIcon, Group as GroupIcon, Logout as LogoutIcon, Menu as MenuIcon, Notifications as NotificationsIcon, Search as SearchIcon } from "@mui/icons-material";
-import { AppBar, Backdrop, Box, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import { AppBar, Backdrop, Badge, Box, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import axios from 'axios';
 import React, { Suspense, lazy, useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -9,16 +9,20 @@ import { orange } from '../../constants/color';
 import { server } from "../../constants/config";
 import { userNotExists } from '../../redux/reducers/auth';
 import { setIsMobile, setIsNotification, setIsSearch } from '../../redux/reducers/misc';
+import { useGetNotificaionsQuery } from "../../redux/api/api";
 
-const SearchDialog = lazy(()=>import("../specifics/Search"))
-const NotifactionsDialog = lazy(()=>import("../specifics/Notifications"))
-const NewGroupDialog = lazy(()=>import("../specifics/NewGroups"))
+const SearchDialog = lazy(() => import("../specifics/Search"))
+const NotifactionsDialog = lazy(() => import("../specifics/Notifications"))
+const NewGroupDialog = lazy(() => import("../specifics/NewGroups"))
 
 const Header = () => {
 
     const dispatch = useDispatch();
 
-    const {isSearch, isNotifactions} = useSelector(state=>state.misc);
+    const { isSearch, isNotifactions } = useSelector(state => state.misc);
+    const {data} = useGetNotificaionsQuery();
+
+    const allRequest = data?.allRequest?.length;
 
     const [isNewGroup, setIsNewGroup] = useState(false);
 
@@ -31,16 +35,16 @@ const Header = () => {
         dispatch(setIsSearch(true))
     }
     const openNewGroup = () => {
-        setIsNewGroup((prev)=>!prev)
+        setIsNewGroup((prev) => !prev)
     }
     const navigateToGroup = () => {
         navigate("/groups")
     }
-    const logoutHandler = async() => {
+    const logoutHandler = async () => {
 
         try {
-            const {data} = await axios.get(`${server}/user/logout`,{withCredentials:true});
-            
+            const { data } = await axios.get(`${server}/user/logout`, { withCredentials: true });
+
             dispatch(userNotExists());
 
             toast.success(data.message);
@@ -50,7 +54,7 @@ const Header = () => {
         }
 
     }
-    const openNotification = ()=>{
+    const openNotification = () => {
         return dispatch(setIsNotification(true));
     }
     return (
@@ -101,6 +105,7 @@ const Header = () => {
                                 title={"Notifictions"}
                                 icon={<NotificationsIcon />}
                                 onClick={openNotification}
+                                value={allRequest}
                             />
                             <IconBtn
                                 title={"Log Out"}
@@ -115,27 +120,27 @@ const Header = () => {
 
             {
                 isSearch && (
-                    <Suspense fallback={<Backdrop open/>}>
+                    <Suspense fallback={<Backdrop open />}>
 
-                        <SearchDialog/>
+                        <SearchDialog />
                     </Suspense>
                 )
             }
 
             {
                 isNotifactions && (
-                    <Suspense fallback={<Backdrop open/>}>
+                    <Suspense fallback={<Backdrop open />}>
 
-                        <NotifactionsDialog/>
+                        <NotifactionsDialog />
                     </Suspense>
                 )
             }
 
             {
                 isNewGroup && (
-                    <Suspense fallback={<Backdrop open/>}>
+                    <Suspense fallback={<Backdrop open />}>
 
-                        <NewGroupDialog/>
+                        <NewGroupDialog />
                     </Suspense>
                 )
             }
@@ -145,12 +150,14 @@ const Header = () => {
 
 
 //Util func for the btn
-const IconBtn = ({ title, icon, onClick }) => {
+const IconBtn = ({ title, icon, onClick, value }) => {
     return (
         <Tooltip title={title}>
 
             <IconButton color='inherit' size='large' onClick={onClick}>
-                {icon}
+                {
+                    value ? <Badge badgeContent={value} color="error">{icon}</Badge> : icon
+                }
             </IconButton>
         </Tooltip>
     )

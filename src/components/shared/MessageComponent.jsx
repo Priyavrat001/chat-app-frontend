@@ -7,7 +7,7 @@ import RenderContent from './RenderContent';
 
 const MessageComponent = ({message, user}) => {
 
-    const {sender, content, attachments=[], createdAt} = message;
+    const {sender, content, attachment=[], createdAt} = message;
 
     const sameSender = sender?._id===user._id;
 
@@ -30,8 +30,8 @@ const MessageComponent = ({message, user}) => {
         content && <Typography>{content}</Typography>
     }
     {
-        attachments.length>0 && attachments.map((attachment, index)=>{
-                const url = attachment.url;
+        attachment.length>0 && attachment.map((attachItem, index)=>{
+                const url = attachItem.url;
                 const file = fileFormat(url);
                 return <Box key={index}>
                 <a href={url} target='_blank' download style={{

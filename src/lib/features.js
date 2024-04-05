@@ -13,7 +13,10 @@ const fileFormat = (url="")=>{
 }
 
 
-const transformImage = (url="", width=100)=>url;
+const transformImage = (url="", width=100)=>{
+
+  return url;
+};
 
 const getLastSevenDays = ()=>{
 const currentDay = moment();

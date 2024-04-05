@@ -1,6 +1,6 @@
 import { AttachFile as AttachFileIcon, Send as SendIcon } from '@mui/icons-material';
 import { IconButton, Stack } from '@mui/material';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import FileMenu from '../components/dialogs/FileMenu';
 import AppLayout from '../components/layouts/AppLayout';
@@ -29,26 +29,27 @@ const Chat = ({ chatId }) => {
   const [page, setPage] = useState(1);
 
   const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
-  const oldMessages = useGetMessagesQuery({ chatId, page });
+  const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
+  
   const { user } = useSelector(state => state.auth);
 
-  const { data:oldMessagesChunk, setData:setOldMessagesChunk } = useInfiniteScrollTop(
+  const { data:oldMessages, setData:setOldMessages } = useInfiniteScrollTop(
     containerRef,
-    oldMessages?.data?.totalPages,
+    oldMessagesChunk.data?.totalPages,
     page,
     setPage,
-    oldMessages?.data?.message
+    oldMessagesChunk.data?.message
   )
 
-  const members = chatDetails?.data?.chat?.members;
+  const members = chatDetails.data?.chat?.members;
   const errors = [
     {
       isError: chatDetails.isError,
       error: chatDetails.error
     },
     {
-      isError: oldMessages.isError,
-      error: oldMessages.error
+      isError: oldMessagesChunk.isError,
+      error: oldMessagesChunk.error
     },
   ]
 
@@ -67,15 +68,28 @@ const Chat = ({ chatId }) => {
     setMessage("");
   };
 
+  useEffect(() => {
+    return ()=>{
+      setMessage([]);
+      setMessages("");
+      setOldMessages([]);
+      setPage(1);
+    }
+  }, [chatId]);
+  
+
   const newMessagesHandler = useCallback((data) => {
+
+    if(data.chaId !== chatId) return;
+
     setMessages(prev => [...prev, data.message])
-  }, [])
+  }, [chatId ])
 
   const eventHandler = { [NEW_MESSAGE]: newMessagesHandler };
 
   useSocketEvent(socket, eventHandler);
 
-  const allMessages = [...oldMessagesChunk, ...messages];
+  const allMessages = [...oldMessages, ...messages];
 
   userError(errors);
 

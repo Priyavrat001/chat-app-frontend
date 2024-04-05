@@ -18,63 +18,47 @@ export const userError = (errors = []) => {
 export const useAsyncMution = (mutatationHook) => {
     const [isLoading, setIsLoading] = useState(false);
     const [data, setData] = useState(null);
-
+  
     const [mutate] = mutatationHook();
-
+  
     const executeMutation = async (toastMessage, ...args) => {
-        setIsLoading(true);
-
-        const toastId = toast.loading(toastMessage || "Updating data");
-
-        try {
-            const res = await mutate(...args);
-            if (res.data) {
-
-                toast.success(res.data.message || "Updated data successfuly", {
-                    id: toastId
-                })
-
-                setData(res.data);
-
-            } else {
-                toast.error(res?.data?.message || "Something went wrong", {
-                    id: toastId
-                });
-
-            }
-
-        } catch (error) {
-
-            console.log(error)
-            toast.error("Something went wrong", {
-                id: toastId
-            });
-
-        } finally {
-            setIsLoading(false);
+      setIsLoading(true);
+      const toastId = toast.loading(toastMessage || "Updating data...");
+  
+      try {
+        const res = await mutate(...args);
+  
+        if (res.data) {
+          toast.success(res.data.message || "Updated data successfully", {
+            id: toastId,
+          });
+          setData(res.data);
+        } else {
+          toast.error(res?.error?.data?.message || "Something went wrong", {
+            id: toastId,
+          });
         }
+      } catch (error) {
+        console.log(error);
+        toast.error("Something went wrong", { id: toastId });
+      } finally {
+        setIsLoading(false);
+      }
     };
+  
+    return [executeMutation, isLoading, data];
+  };
 
+export const useSocketEvent = (socket, handlers)=>{
+  useEffect(() => {
+    Object.entries(handlers).forEach(([event, handler]) => {
+      socket.on(event, handler);
+    });
 
-    return [
-        executeMutation,
-        isLoading,
-        data
-    ]
-};
-
-export const useSocketEvent = (socket, handler)=>{
-    useEffect(() => {
-
-        Object.entries(handler).forEach(([event, handler])=>{
-            socket.on(event, handler);
-        });
-
-    
-        return ()=>{
-            Object.entries(handler).forEach(([event, handler])=>{
-                socket.off(event, handler);
-            });        }
-       
-      }, [socket, handler])
+    return () => {
+      Object.entries(handlers).forEach(([event, handler]) => {
+        socket.off(event, handler);
+      });
+    };
+  }, [socket, handlers]);
 }

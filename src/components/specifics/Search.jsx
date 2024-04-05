@@ -3,11 +3,10 @@ import { Search as SearchIcon } from "@mui/icons-material";
 import { Dialog, DialogTitle, InputAdornment, List, Stack, TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useAsyncMution } from "../../hooks/hook";
 import { useLazySearchUsersQuery, useSendFriendRequestMutation } from '../../redux/api/api';
 import { setIsSearch } from '../../redux/reducers/misc';
 import UserItems from '../shared/UserItems';
-import { toast } from "react-hot-toast";
-import { useAsyncMution } from "../../hooks/hook";
 
 
 const Search = () => {
@@ -22,6 +21,7 @@ const Search = () => {
   const [users, setUsers] = useState([])
 
   const addHandler = async(id)=>{
+
     await sendFriendRequest("Sending friend request...", {userId:id})
     
   }
