@@ -30,10 +30,17 @@ for (let i = 0; i < 7; i++) {
 }
 
 return lastSevenDays;
+};
+
+
+const geOrSaveFromStorage = ({key, value, get})=>{
+    if(get) return localStorage.getItem(key)?JSON.parse(localStorage.getItem(key)):null;
+    else localStorage.setItem(key, JSON.stringify(value));
 }
 
 export {
     fileFormat,
     transformImage,
-    getLastSevenDays
+    getLastSevenDays,
+    geOrSaveFromStorage
 }

@@ -1,5 +1,5 @@
 import { Drawer, Grid } from '@mui/material'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 import { useSocketEvent, userError } from '../../hooks/hook'
@@ -13,6 +13,7 @@ import { LayoutLoader } from "./Loaders"
 import { getSocket } from '../../socket'
 import { NEW_MESSAGE_ALERT, NEW_REQUEST } from '../../constants/event'
 import { incrementNotification, setNewMessagesAlert } from '../../redux/reducers/chat'
+import { geOrSaveFromStorage } from '../../lib/features'
 
 const AppLayout = () => (WrappedComponent) => {
   return (props) => {
@@ -36,6 +37,12 @@ const AppLayout = () => (WrappedComponent) => {
     };
 
     const handleMobileClose = () => dispatch(setIsMobile(false));
+
+    useEffect(() => {
+      geOrSaveFromStorage({key:NEW_MESSAGE_ALERT, value:newMessageAlert});
+      
+    }, [newMessageAlert])
+    
     
     const newMessageAlertListener = useCallback((data)=>{
       if(data.chatId === id) return;
