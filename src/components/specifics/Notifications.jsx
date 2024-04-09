@@ -1,12 +1,11 @@
-import React,{memo} from 'react'
-import { sampleNotifications } from '../../constants/sampleData'
 import { Avatar, Button, Dialog, DialogTitle, ListItem, Stack, Typography } from '@mui/material'
-import { useAcceptFriendRequestMutation, useGetNotificaionsQuery } from '../../redux/api/api'
-import { userError } from '../../hooks/hook'
-import { LayoutLoader } from '../layouts/Loaders'
-import { useDispatch, useSelector } from 'react-redux'
-import { setIsNotification } from '../../redux/reducers/misc'
+import React, { memo } from 'react'
 import { toast } from 'react-hot-toast'
+import { useDispatch, useSelector } from 'react-redux'
+import { useErrors } from '../../hooks/hook'
+import { useAcceptFriendRequestMutation, useGetNotificaionsQuery } from '../../redux/api/api'
+import { setIsNotification } from '../../redux/reducers/misc'
+import { LayoutLoader } from '../layouts/Loaders'
 
 
 const Notifications = () => {
@@ -36,7 +35,7 @@ const oncloseHandler = ()=>{
   dispatch(setIsNotification(false));
 }
 
-userError([{error, isError}]);
+useErrors([{error, isError}]);
 
   return (
     <Dialog open={isNotifactions} onClose={oncloseHandler}>

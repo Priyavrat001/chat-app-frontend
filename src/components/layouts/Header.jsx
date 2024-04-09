@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { orange } from '../../constants/color';
 import { server } from "../../constants/config";
 import { userNotExists } from '../../redux/reducers/auth';
-import { setIsMobile, setIsNotification, setIsSearch } from '../../redux/reducers/misc';
+import { setIsMobile, setIsNewGroup, setIsNotification, setIsSearch } from '../../redux/reducers/misc';
 import { useGetNotificaionsQuery } from "../../redux/api/api";
 
 const SearchDialog = lazy(() => import("../specifics/Search"))
@@ -19,12 +19,10 @@ const Header = () => {
 
     const dispatch = useDispatch();
 
-    const { isSearch, isNotifactions } = useSelector(state => state.misc);
+    const { isSearch, isNotifactions, isNewGroup } = useSelector(state => state.misc);
     const {data} = useGetNotificaionsQuery();
 
     const allRequest = data?.allRequest?.length;
-
-    const [isNewGroup, setIsNewGroup] = useState(false);
 
     const navigate = useNavigate();
 
@@ -35,7 +33,7 @@ const Header = () => {
         dispatch(setIsSearch(true))
     }
     const openNewGroup = () => {
-        setIsNewGroup((prev) => !prev)
+        dispatch(setIsNewGroup(true));
     }
     const navigateToGroup = () => {
         navigate("/groups")

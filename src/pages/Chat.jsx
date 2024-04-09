@@ -4,12 +4,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import FileMenu from '../components/dialogs/FileMenu';
 import AppLayout from '../components/layouts/AppLayout';
-import { LayoutLoader } from '../components/layouts/Loaders';
+import { LayoutLoader, TypingLoader } from '../components/layouts/Loaders';
 import MessageComponent from '../components/shared/MessageComponent';
 import { InputBox } from '../components/styles/StyledComponents';
 import { grayColor, orange } from '../constants/color';
-import { NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
-import { useSocketEvent, userError } from '../hooks/hook';
+import { ALERT, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
+import { useSocketEvent, useErrors } from '../hooks/hook';
 import { useChatDetailsQuery, useGetMessagesQuery } from '../redux/api/api';
 import { getSocket } from '../socket';
 import { useInfiniteScrollTop } from "6pp";
@@ -20,6 +20,7 @@ import { removeNewMessageAlert } from '../redux/reducers/chat';
 const Chat = ({ chatId }) => {
 
   const containerRef = useRef(null);
+  const bottomRef = useRef(null);
   const dispatch = useDispatch();
 
   const socket = getSocket();
@@ -96,6 +97,11 @@ const Chat = ({ chatId }) => {
     };
   }, [chatId]);
 
+  useEffect(() => {
+    if(bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
+  }, [messages])
+  
+
   const newMessagesListener = useCallback(
     (data) => {
       if (data.chatId !== chatId) return;
@@ -123,7 +129,22 @@ const Chat = ({ chatId }) => {
     [chatId]
   );
 
+  const alertListener = useCallback((data)=>{
+    const messageForAlert = {
+      content: data,
+      _id: uuid(),
+      sender: {
+          _id: "dfsdfsdf",
+          name: "Admin"
+      },
+      chat: chatId,
+      createdAt: new Date().toString()
+  };
+  setMessages((prev)=>[...prev, messageForAlert]);
+  },[chatId]);
+
   const eventHandler = {
+    [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
@@ -134,7 +155,7 @@ const Chat = ({ chatId }) => {
 
   const allMessages = [...oldMessages, ...messages];
 
-  userError(errors);
+  useErrors(errors);
 
 
   return chatDetails.isLoading ? <LayoutLoader /> : (
@@ -156,6 +177,12 @@ const Chat = ({ chatId }) => {
             <MessageComponent key={i._id} message={i} user={user} />
           ))
         }
+
+        {
+          otherUserTyping && <TypingLoader/>
+        }
+
+        <div ref={bottomRef}/>
 
       </Stack>
 

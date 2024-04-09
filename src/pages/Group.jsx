@@ -1,12 +1,16 @@
-import {Add as AddIcon, Delete as DeleteIcon, Done as DoneIcon, Edit as EditIcon, KeyboardBackspace as KeyboardBackspaceIcon, Menu as MenuIcon } from '@mui/icons-material'
+import { Add as AddIcon, Delete as DeleteIcon, Done as DoneIcon, Edit as EditIcon, KeyboardBackspace as KeyboardBackspaceIcon, Menu as MenuIcon } from '@mui/icons-material'
 import { Backdrop, Button, Drawer, Grid, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material'
 import React, { Suspense, lazy, memo, useEffect, useState } from 'react'
-import { bgGradient, matBlack } from "../constants/color"
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Link } from "../components/styles/StyledComponents"
+import { LayoutLoader } from '../components/layouts/Loaders'
 import AvatarCard from "../components/shared/AvatarCard"
-import { sampleChats, sampleUsers } from "../constants/sampleData"
 import UserItems from '../components/shared/UserItems'
+import { Link } from "../components/styles/StyledComponents"
+import { matBlack } from "../constants/color"
+import { sampleChats, sampleUsers } from "../constants/sampleData"
+import { useErrors } from '../hooks/hook'
+import { useMyGroupsQuery } from '../redux/api/api'
+
 const ConfirmDeleteDialog = lazy(()=>import("../components/dialogs/ConfirmDeleteDialog"))
 const AddMemberDialog = lazy(()=>import("../components/dialogs/AddMemberDialog"))
 
@@ -18,6 +22,10 @@ const Group = () => {
 
   const navigate = useNavigate();
 
+  const myGroups = useMyGroupsQuery("");
+
+  console.log(myGroups.data)
+
   const [isMobileMenu, setIsMobileMenu] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState(false);
@@ -25,6 +33,13 @@ const Group = () => {
 
   const [groupName, setGroupName] = useState("");
   const [groupNameUpdatedValue, setGroupNameUpdatedValue] = useState("");
+
+  const errors = [{
+    isErr:myGroups.isError,
+    error:myGroups.error
+  }];
+
+  useErrors(errors);
 
   const navigateBack = () => {
 
@@ -148,7 +163,7 @@ const Group = () => {
     </Stack>
   )
 
-  return (
+  return myGroups.isLoading?<LayoutLoader/>:(
     <Grid container height={"100vh"}>
       <Grid
         item
