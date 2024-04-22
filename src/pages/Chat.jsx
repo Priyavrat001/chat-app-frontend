@@ -1,7 +1,9 @@
+import { useInfiniteScrollTop } from "6pp";
 import { AttachFile as AttachFileIcon, Send as SendIcon } from '@mui/icons-material';
 import { IconButton, Stack } from '@mui/material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import FileMenu from '../components/dialogs/FileMenu';
 import AppLayout from '../components/layouts/AppLayout';
 import { LayoutLoader, TypingLoader } from '../components/layouts/Loaders';
@@ -9,12 +11,11 @@ import MessageComponent from '../components/shared/MessageComponent';
 import { InputBox } from '../components/styles/StyledComponents';
 import { grayColor, orange } from '../constants/color';
 import { ALERT, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
-import { useSocketEvent, useErrors } from '../hooks/hook';
+import { useErrors, useSocketEvent } from '../hooks/hook';
 import { useChatDetailsQuery, useGetMessagesQuery } from '../redux/api/api';
-import { getSocket } from '../socket';
-import { useInfiniteScrollTop } from "6pp";
-import { setIsFileMenu } from '../redux/reducers/misc';
 import { removeNewMessageAlert } from '../redux/reducers/chat';
+import { setIsFileMenu } from '../redux/reducers/misc';
+import { getSocket } from '../socket';
 
 
 const Chat = ({ chatId }) => {
@@ -22,6 +23,7 @@ const Chat = ({ chatId }) => {
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const socket = getSocket();
 
@@ -44,7 +46,7 @@ const Chat = ({ chatId }) => {
     oldMessagesChunk.data?.totalPages,
     page,
     setPage,
-    oldMessagesChunk.data?.message
+    oldMessagesChunk.data?.messages
   );
 
   const errors = [
@@ -99,7 +101,12 @@ const Chat = ({ chatId }) => {
 
   useEffect(() => {
     if(bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
-  }, [messages])
+  }, [messages]);
+
+  // useEffect(() => {
+  //  if(chatDetails.data?.chat) navigate("/")
+  // }, [chatDetails.data?.chat]);
+  
   
 
   const newMessagesListener = useCallback(

@@ -7,12 +7,13 @@ import { useErrors, useSocketEvent } from '../../hooks/hook'
 import { geOrSaveFromStorage } from '../../lib/features'
 import { useMyChatsQuery } from '../../redux/api/api'
 import { incrementNotification, setNewMessagesAlert } from '../../redux/reducers/chat'
-import { setIsMobile } from '../../redux/reducers/misc'
+import { setIsDeleteMenu, setIsMobile, setSelectedDeleteChat } from '../../redux/reducers/misc'
 import { getSocket } from '../../socket'
 import Title from "../shared/Title"
 import ChatList from '../specifics/ChatList'
 import Profile from '../specifics/Profile'
 import Header from './Header'
+import DeleteChatMenu from '../dialogs/DeleteChatMenu'
 
 
 const AppLayout = () => (WrappedComponent) => {
@@ -33,8 +34,6 @@ const AppLayout = () => (WrappedComponent) => {
     const { newMessagesAlert } = useSelector((state) => state.chat);
 
     const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
-
-    console.log(data)
 
     useErrors([{ isError, error }]);
 
@@ -85,10 +84,10 @@ const AppLayout = () => (WrappedComponent) => {
       <Title />
       <Header />
 
-      {/* <DeleteChatMenu
+      <DeleteChatMenu
         dispatch={dispatch}
         deleteMenuAnchor={deleteMenuAnchor}
-      /> */}
+      />
 
       {isLoading ? (
         <Skeleton />
