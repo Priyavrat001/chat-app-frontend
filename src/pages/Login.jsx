@@ -14,6 +14,7 @@ import { userNameValidators } from '../utils/validators';
 const Login = () => {
 
     const [isLogin, setIsLogin] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     const dispatch = useDispatch();
 
@@ -27,6 +28,10 @@ const Login = () => {
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
+
+        const toastId = toast.loading("Loging in...")
+
+        setIsLoading(true);
 
         const config = {
             withCredentials: true,
@@ -46,13 +51,23 @@ const Login = () => {
 
             dispatch(userExists(data.user));
 
-            toast.success(data.message);
+            toast.success(data.message, {
+                id: toastId
+            });
         } catch (error) {
-            toast.error(error?.response?.data?.message || "Something went wrong");
+            toast.error(error?.response?.data?.message || "Something went wrong", {
+                id: toastId
+            });
+        } finally {
+            setIsLoading(false);
         }
     }
     const handleRegisterSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
+
+        const toastId = toast.loading("Regestering...");
+
+        setIsLoading(true);
 
         const formData = new FormData();
 
@@ -74,10 +89,16 @@ const Login = () => {
 
             dispatch(userExists(data.user));
 
-            toast.success(data.message);
+            toast.success(data.message, {
+                id: toastId
+            });
 
         } catch (error) {
-            toast.error(error?.response?.data?.message || "Something went wrong");
+            toast.error(error?.response?.data?.message || "Something went wrong", {
+                id: toastId
+            });
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -139,6 +160,7 @@ const Login = () => {
                                         variant='contained'
                                         color='primary'
                                         type='submit'
+                                        disabled={isLoading}
                                     >
                                         Login
                                     </Button>
@@ -155,6 +177,7 @@ const Login = () => {
                                         fullWidth
                                         variant='text'
                                         onClick={toggleLogin}
+                                        disabled={isLoading}
                                     >
                                         Register
                                     </Button>

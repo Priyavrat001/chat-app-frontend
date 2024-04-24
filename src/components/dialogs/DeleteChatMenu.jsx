@@ -34,9 +34,9 @@ const DeleteChatMenu = ({ dispatch, deleteMenuAnchor }) => {
         deleteChat("Deleteing chat...", selectedDeleteChat.chatId);
     };
 
-useEffect(() => {
-  if(deleteChatData || leaveGroup) navigate("/");
-}, [deleteChatData, leaveGroupData])
+// useEffect(() => {
+//   if(deleteChatData || leaveGroup) return navigate("/");
+// }, [deleteChatData, leaveGroupData])
 
 
     return (

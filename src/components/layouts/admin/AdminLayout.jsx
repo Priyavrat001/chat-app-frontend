@@ -1,6 +1,7 @@
 import { Close as CloseIcon, Dashboard as DashboardIcon, ExitToApp as ExitToAppIcon, Groups as GroupsIcon, ManageAccounts as ManageAccountsIcon, Menu as MenuIcon, Message as MessageIcon } from '@mui/icons-material'
 import { Box, Drawer, Grid, IconButton, Stack, Typography, styled } from '@mui/material'
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux'
 import { Link as LinkComponent, Navigate, useLocation } from 'react-router-dom'
 
 const Link = styled(LinkComponent)`
@@ -34,8 +35,6 @@ const admintab = [{
     icon: <MessageIcon />
 },
 ]
-
-const isAdmin = true;
 
 const SideBar = ({ w = "100vw" }) => {
     const location = useLocation();
@@ -76,6 +75,8 @@ const SideBar = ({ w = "100vw" }) => {
 
 
 const AdminLayout = ({ children }) => {
+
+    const {isAdmin} = useSelector(state=>state.auth)
 
     const [isMobile, setIsMobile] = useState(false)
 
