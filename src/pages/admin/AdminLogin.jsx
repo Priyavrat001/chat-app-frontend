@@ -3,7 +3,7 @@ import { Button, Container, Paper, TextField, Typography } from "@mui/material";
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
-import { adminLogin } from "../../redux/thunks/admin";
+import { adminLogin, getAdmin } from "../../redux/thunks/admin";
 import { bgGradient } from "../../constants/color";
 
 const AdminLogin = () => {
@@ -20,9 +20,9 @@ const AdminLogin = () => {
     dispatch(adminLogin(secretKey.value));
   };
 
-  // useEffect(() => {
-  //   dispatch(getAdmin());
-  // }, [dispatch]);
+  useEffect(() => {
+    dispatch(getAdmin());
+  }, [dispatch]);
 
 
   useEffect(() => {

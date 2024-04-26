@@ -67,6 +67,7 @@ const AppLayout = () => (WrappedComponent) => {
     }, [refetch, navigate]);
 
     const onlineUsersListener = useCallback((data) => {
+      console.log(data)
       setOnlineUsers(data);
     }, []);
 

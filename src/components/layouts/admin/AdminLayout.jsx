@@ -1,8 +1,9 @@
 import { Close as CloseIcon, Dashboard as DashboardIcon, ExitToApp as ExitToAppIcon, Groups as GroupsIcon, ManageAccounts as ManageAccountsIcon, Menu as MenuIcon, Message as MessageIcon } from '@mui/icons-material'
 import { Box, Drawer, Grid, IconButton, Stack, Typography, styled } from '@mui/material'
 import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link as LinkComponent, Navigate, useLocation } from 'react-router-dom'
+import { adminLogout } from '../../../redux/thunks/admin'
 
 const Link = styled(LinkComponent)`
 padidng:0 3rem;
@@ -39,7 +40,12 @@ const admintab = [{
 const SideBar = ({ w = "100vw" }) => {
     const location = useLocation();
 
-    const logoutHandler = () => { console.log("loging out the admin page") };
+    const dispatch = useDispatch();
+
+    const logoutHandler = () => { 
+
+        dispatch(adminLogout());
+     };
 
 
     return <Stack width={w} direction={"column"} spacing={"3rem"} margin={"2rem 5rem"}>
@@ -76,7 +82,7 @@ const SideBar = ({ w = "100vw" }) => {
 
 const AdminLayout = ({ children }) => {
 
-    const {isAdmin} = useSelector(state=>state.auth)
+    const {isAdmin} = useSelector(state=>state.auth);
 
     const [isMobile, setIsMobile] = useState(false)
 

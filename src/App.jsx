@@ -23,7 +23,7 @@ const About = lazy(() => import("./pages/About"));
 const Login = lazy(() => import("./pages/Login"));
 const Group = lazy(() => import("./pages/Group"));
 const Chat = lazy(() => import("./pages/Chat"));
-const PageNotFound = lazy(() => import("./pages/PageNotFound"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 
 const App = () => {
@@ -80,7 +80,7 @@ const App = () => {
           <Route path='/admin/messages' element={<MessageMangement />} />
 
           <Route path='*' element={
-            <PageNotFound />
+            <NotFound />
           } />
         </Routes>
       </Suspense>

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import AdminLayout from '../../components/layouts/admin/AdminLayout'
 import Table from '../../components/shared/admin/Table'
-import { Avatar, Stack } from '@mui/material'
+import { Avatar, Skeleton, Stack } from '@mui/material'
 import { dashboardData } from '../../constants/sampleData'
 import { transformImage } from "../../lib/features";
 import AvatarCard from "../../components/shared/AvatarCard"
+import { useErrors } from '../../hooks/hook'
+import { useFetchData } from '6pp'
+import { server } from '../../constants/config'
 
 const columns = [
   {
@@ -26,6 +29,12 @@ const columns = [
   headerName:"Name",
   headerClassName:"table-header",
   width:300
+},
+  {
+  field:"groupChat",
+  headerName:"Group",
+  headerClassName:"table-header",
+  width:100
 },
   {
   field:"totalMembers",
@@ -62,22 +71,46 @@ const columns = [
 
 const ChatManagement = () => {
 
+  const {
+    loading,
+    data,
+    error
+  } = useFetchData(
+    `${server}/admin/chats`,
+    "dashboard-chats",
+  );
+
+  const errors = [
+    {
+      isError:error,
+      error:error
+    }
+  ];
+
+  useErrors(errors);
+
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-   setRows(dashboardData.chats.map(i=>({...i, id: i._id, avatar:i.avatar.map((i)=>transformImage(i, 50)),
-  members:i.members.map((i)=>transformImage(i.avatar, 50)),
-  creator:{
-    name:i.creator.name,
-    avatar:transformImage(i.creator.avatar,50)
+  if(data){
+    setRows(data.allChats.map(i=>({...i, id: i._id, avatar:i.avatar.map((i)=>transformImage(i, 50)),
+      members:i.members.map((i)=>transformImage(i.avatar, 50)),
+      creator:{
+        name:i.creator.name,
+        avatar:transformImage(i.creator.avatar,50)
+      }
+      })));
   }
-  })))
-  }, [])
+  }, [data])
   
 
   return (
     <AdminLayout>
-        <Table heading={"All Chats"} columns={columns} rows={rows}/>
+       {
+        loading?<Skeleton/>:(
+          <Table heading={"All Chats"} columns={columns} rows={rows}/>
+        )
+       }
     </AdminLayout>
   )
 }

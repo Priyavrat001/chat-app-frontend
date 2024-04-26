@@ -8,7 +8,7 @@ export const lightBlue = "#2694ab"
 
 export const matBlack = "rgba(0, 0, 0, 0.8)"
 
-export const bgGradient = "linear-gradient(rgb(255 255 209, rgb(249 159 159))"
+export const bgGradient = "linear-gradient(rgb(255 225 209), rgb(249 159 159))";
 
 export const purple = "rgba(75,12,192,1)"
 

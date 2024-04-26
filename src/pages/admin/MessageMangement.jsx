@@ -1,11 +1,13 @@
+import { useFetchData } from "6pp"
+import { Avatar, Box, Skeleton, Stack } from '@mui/material'
+import moment from 'moment'
 import React, { useEffect, useState } from 'react'
 import AdminLayout from '../../components/layouts/admin/AdminLayout'
+import RenderContent from "../../components/shared/RenderContent"
 import Table from '../../components/shared/admin/Table'
-import { dashboardData } from '../../constants/sampleData'
+import { server } from '../../constants/config'
+import { useErrors } from "../../hooks/hook"
 import { fileFormat, transformImage } from '../../lib/features'
-import moment from 'moment'
-import { Avatar, Box, Stack } from '@mui/material'
-import RenderContent from "../../components/shared/RenderContent";
 
 const columns = [
   {
@@ -83,20 +85,44 @@ const columns = [
 
 const MessageMangement = () => {
 
+  const {
+    loading,
+    data,
+    error
+  } = useFetchData(
+    `${server}/admin/messages`,
+    "dashboard-messages",
+  );
+
+  const errors = [
+    {
+      isError:error,
+      error:error
+    }
+  ];
+
+  useErrors(errors);
+
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    setRows(dashboardData.messages.map(i=>({...i, id: i._id, sender: {
-      name: i.sender.name,
-      avatar: transformImage(i.sender.avatar, 50)
-    },
-    createdAt: moment(i.createdAt).format("MMM Do YYYY, h:mm:ss a")
-   })))
-   }, [])
+    if(data){
+      setRows(data.messages.map(i=>({...i, id: i._id, sender: {
+        name: i.sender.name,
+        avatar: transformImage(i.sender.avatar, 50)
+      },
+      createdAt: moment(i.createdAt).format("MMM Do YYYY, h:mm:ss a")
+     })))
+    }
+   }, [data]);
 
   return (
     <AdminLayout>
-      <Table heading={"All Messages"} columns={columns} rows={rows} rowHeight={200}/>
+     {
+      loading?<Skeleton/>:(
+        <Table heading={"All Messages"} columns={columns} rows={rows} rowHeight={200}/>
+      )
+     }
 
     </AdminLayout>
   )
