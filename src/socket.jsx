@@ -7,7 +7,7 @@ const SocketContext = createContext();
 const getSocket = () => useContext(SocketContext);
 
 const SocketProvider = ({ children }) => {
-  const socket = useMemo(() => io(socket_sever, { withCredentials: true }), []);
+  const socket = useMemo(() => io("https://chat-app-backend-i5qs.onrender.com", { withCredentials: true }), []);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>

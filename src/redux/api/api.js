@@ -63,7 +63,7 @@ const api = createApi({
 
 
                 return {
-                    url: "user/notification",
+                    url,
                     credentials: "include",
                 }
             },
