@@ -1,6 +1,6 @@
-import { createContext, useMemo, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import io from "socket.io-client";
-import { socket_sever } from "./constants/config";
+
 
 const SocketContext = createContext();
 
@@ -14,4 +14,4 @@ const SocketProvider = ({ children }) => {
   );
 };
 
-export { SocketProvider, getSocket };
+export { SocketProvider, getSocket }
