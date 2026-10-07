@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo } from "react";
 import io from "socket.io-client";
+import { socket_sever } from "./constants/config";
 
 
 const SocketContext = createContext();
@@ -7,7 +8,7 @@ const SocketContext = createContext();
 const getSocket = () => useContext(SocketContext);
 
 const SocketProvider = ({ children }) => {
-  const socket = useMemo(() => io("https://chat-app-backend-i5qs.onrender.com", { withCredentials: true }), []);
+  const socket = useMemo(() => io("http://localhost:4000", { withCredentials: true }), []);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>

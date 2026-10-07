@@ -6,12 +6,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import FileMenu from '../components/dialogs/FileMenu';
 import AppLayout from '../components/layouts/AppLayout';
+import ChatHeader from '../components/layouts/ChatHeader';
 import { LayoutLoader, TypingLoader } from '../components/layouts/Loaders';
 import MessageComponent from '../components/shared/MessageComponent';
 import { InputBox } from '../components/styles/StyledComponents';
 import { grayColor, orange } from '../constants/color';
 import { ALERT, CHAT_JOINED, CHAT_LEAVED, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
 import { useErrors, useSocketEvent } from '../hooks/hook';
+import { v4 as uuid } from 'uuid';
 import { useChatDetailsQuery, useGetMessagesQuery } from '../redux/api/api';
 import { removeNewMessageAlert } from '../redux/reducers/chat';
 import { setIsFileMenu } from '../redux/reducers/misc';
@@ -36,7 +38,7 @@ const Chat = ({ chatId }) => {
 
   const typingTimeOut = useRef(null);
 
-  const chatDetails = useChatDetailsQuery({ chatId, skip: !chatId });
+  const chatDetails = useChatDetailsQuery({ chatId, populate: true, skip: !chatId });
   const oldMessagesChunk = useGetMessagesQuery({ chatId, page });
   
   const { user } = useSelector(state => state.auth);
@@ -55,6 +57,7 @@ const Chat = ({ chatId }) => {
   ];
 
   const members = chatDetails?.data?.chat?.members;
+  const memberIds = members?.map((m) => (m?._id ? m._id : m)) || [];
 
   const handleFileOpen = (e) => {
     dispatch(setIsFileMenu(true));
@@ -66,8 +69,8 @@ const Chat = ({ chatId }) => {
 
     if (!message.trim()) return;
 
-    // Emitting the message to the server
-    socket.emit(NEW_MESSAGE, { chatId, members, message });
+    // Emitting the message to the server (send member ids)
+    socket.emit(NEW_MESSAGE, { chatId, members: memberIds, message });
     setMessage("");
   };
 
@@ -75,14 +78,14 @@ const Chat = ({ chatId }) => {
     setMessage(e.target.value);
 
     if(!userTyping){
-      socket.emit(START_TYPING, {members, chatId});
+      socket.emit(START_TYPING, {members: memberIds, chatId});
       setUserTyping(true);
     };
 
     if(typingTimeOut.current) clearTimeout(typingTimeOut.current);
 
     typingTimeOut.current = setTimeout(() => {
-      socket.emit(STOP_TYPING, {members, chatId});
+      socket.emit(STOP_TYPING, {members: memberIds, chatId});
       setUserTyping(false);
     }, 2000);
 
@@ -171,33 +174,36 @@ const Chat = ({ chatId }) => {
 
   return chatDetails.isLoading ? <LayoutLoader /> : (
     <>
-      <Stack ref={containerRef}
-        boxSizing={"border-box"}
-        padding={"1rem"}
-        spacing={"1rem"}
-        bgcolor={grayColor}
-        height={"90%"}
-        sx={{
-          overflow: "hidden",
-          overflowY: "auto"
-        }}
-      >
+      <Stack height="100%" minHeight={0}>
+        <ChatHeader chat={chatDetails.data?.chat} user={user} />
+        <Stack ref={containerRef}
+          boxSizing={"border-box"}
+          padding={"1rem"}
+          spacing={"1rem"}
+          bgcolor={grayColor}
+          flex={1}
+          minHeight={0}
+          sx={{
+            overflow: "hidden",
+            overflowY: "auto"
+          }}
+        >
 
-        {
-          allMessages.map((i) => (
-            <MessageComponent key={i._id} message={i} user={user} />
-          ))
-        }
+          {
+            allMessages.map((i) => (
+              <MessageComponent key={i._id} message={i} user={user} />
+            ))
+          }
 
-        {
-          otherUserTyping && <TypingLoader/>
-        }
+          {
+            otherUserTyping && <TypingLoader/>
+          }
 
-        <div ref={bottomRef}/>
+          <div ref={bottomRef}/>
 
-      </Stack>
+        </Stack>
 
-      <form style={{ height: "10%" }} onSubmit={handleSubmit}>
+        <form style={{ height: "10%", minHeight: "4.5rem", flexShrink: 0 }} onSubmit={handleSubmit}>
 
         <Stack direction={"row"} height={"100%"} padding={"1rem"} alignItems={"center"} position={"relative"}>
           <IconButton sx={{
@@ -226,7 +232,8 @@ const Chat = ({ chatId }) => {
 
         </Stack>
 
-      </form>
+        </form>
+      </Stack>
       <FileMenu anchorE1={fileMenuEnchor} chatId={chatId}/>
     </>
   )
