@@ -1,84 +1,138 @@
-import React from 'react';
-import { Doughnut, Line } from 'react-chartjs-2'
-import { Chart as ChartJS, LinearScale, PointElement, CategoryScale, LineElement, Filler, ArcElement, Legend, Tooltip } from 'chart.js';
-import { lightOrange, lightPurple, orange, purple } from '../../../constants/color';
-import { getLastSevenDays } from '../../../lib/features';
+import PropTypes from "prop-types";
+import { Doughnut, Line } from "react-chartjs-2";
+import {
+  ArcElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from "chart.js";
+import { getLastSevenDays } from "../../../lib/features";
 
-ChartJS.register(Tooltip, PointElement, CategoryScale, LinearScale, LineElement, Filler, ArcElement, Legend);
+ChartJS.register(
+  Tooltip,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  Filler,
+  ArcElement,
+  Legend,
+);
 
-const lineChart = {
-  responsive:true,
-  plugins:{
-    legend:{
-      display:false
+const lineChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: "#171a2b",
+      padding: 12,
+      displayColors: false,
+      titleFont: { family: "Inter, sans-serif", weight: "600" },
+      bodyFont: { family: "Inter, sans-serif" },
     },
-    title:{
-      display:false
-    }
   },
-  scales:{
-    x:{
-      display:true
+  interaction: { intersect: false, mode: "index" },
+  scales: {
+    x: {
+      grid: { display: false, drawBorder: false },
+      border: { display: false },
+      ticks: {
+        color: "#9699aa",
+        font: { family: "Inter, sans-serif", size: 11 },
+      },
     },
-    y:{
-     beginAtZero:true,
-     grid:{
-      display:false
-     }
-    }
-  }
+    y: {
+      beginAtZero: true,
+      grid: { color: "#f0f1f5", drawBorder: false },
+      border: { display: false },
+      ticks: {
+        precision: 0,
+        color: "#9699aa",
+        font: { family: "Inter, sans-serif", size: 11 },
+        padding: 10,
+      },
+    },
+  },
 };
 
-const labels = getLastSevenDays();
-
-const LineChart = ({vlaue=[]}) => {
-
+const LineChart = ({ vlaue = [] }) => {
   const data = {
-    labels,
-    datasets: [{
-      data: vlaue,
-      label: 'Revenue',
-      fill:true,
-      backgroundColor:lightPurple,
-      borderColor:purple,
-    }]
+    labels: getLastSevenDays(),
+    datasets: [
+      {
+        data: vlaue,
+        label: "Messages",
+        fill: true,
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return "rgba(99,102,241,.12)";
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, "rgba(99,102,241,.24)");
+          gradient.addColorStop(1, "rgba(99,102,241,0)");
+          return gradient;
+        },
+        borderColor: "#6258e8",
+        borderWidth: 3,
+        tension: 0.38,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#fff",
+        pointBorderColor: "#6258e8",
+        pointBorderWidth: 2,
+      },
+    ],
   };
 
-  return (
-    <Line data={data} options={lineChart}/>
-  )
+  return <Line data={data} options={lineChartOptions} />;
 };
 
 const doughnutOptions = {
-  responsive:true,
-  plugins:{
-    legend:{
-      display:false
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: "76%",
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: "#171a2b",
+      padding: 12,
+      displayColors: true,
     },
   },
-  cutout:120
-}
+  borderWidth: 0,
+  spacing: 4,
+};
 
-const DoughnutChart = ({vlaue=[], labels=[]}) => {
-
+const DoughnutChart = ({ vlaue = [], labels = [] }) => {
   const data = {
     labels,
-    datasets: [{
-      data: vlaue,
-      backgroundColor:[lightPurple, lightOrange],
-      hoverBackgroundColor:[purple, orange],
-      borderColor:[purple, orange],
-      offset:30
-    }]
+    datasets: [
+      {
+        data: vlaue,
+        backgroundColor: ["#6258e8", "#f2a65a"],
+        hoverBackgroundColor: ["#4f46d5", "#e8933d"],
+        borderRadius: 8,
+        borderWidth: 0,
+      },
+    ],
   };
 
+  return <Doughnut data={data} options={doughnutOptions} />;
+};
 
-  return (
-    <Doughnut style={{zIndex:"1"}} data={data} options={doughnutOptions}/>
-  )
-}
+export { LineChart, DoughnutChart };
 
-export {
-  LineChart,
-  DoughnutChart
-}
+LineChart.propTypes = {
+  vlaue: PropTypes.arrayOf(PropTypes.number),
+};
+
+DoughnutChart.propTypes = {
+  vlaue: PropTypes.arrayOf(PropTypes.number),
+  labels: PropTypes.arrayOf(PropTypes.string),
+};

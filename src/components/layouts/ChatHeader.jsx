@@ -1,18 +1,31 @@
 import { Call as CallIcon, Videocam as VideocamIcon } from '@mui/icons-material'
 import { Avatar, AvatarGroup, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { getSocket } from '../../socket';
-import { NEW_AUDIO_CALL_ALERT } from '../../constants/events';
+import {
+  ACCEPT_VIDEO_CALL,
+  END_VIDEO_CALL,
+  NEW_AUDIO_CALL_ALERT,
+  NEW_VIDEO_CALL_ALERT,
+} from '../../constants/events';
 import { useEffect } from 'react';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
 import IncomingCallDialog from '../call/IncomingCallDialog';
 import { ACCEPT_AUDIO_CALL } from '../../constants/event';
 import AudioCall from '../call/AudioCall';
+import VideoCallDialog from '../call/VideoCallDialog';
+import VideoCall from '../call/VideoCall';
 
 const ChatHeader = ({ chat, user }) => {
 
   const [incomingCall, setIncomingCall] = useState(null);
   const [outgoingCall, setOutgoingCall] = useState(null);
+
   const [activeCall, setActiveCall] = useState(null);
+  const [incomingVideoCall, setIncomingVideoCall] = useState(null);
+  const [outgoingVideoCall, setOutgoingVideoCall] = useState(null);
+  const [activeVideoCall, setActiveVideoCall] = useState(null);
 
   const socket = getSocket();
   const members = chat?.members || []
@@ -25,10 +38,11 @@ const ChatHeader = ({ chat, user }) => {
   const title = isGroupChat ? chat?.name : otherMember?.name || chat?.name || 'Chat'
   const avatars = isGroupChat
     ? members.map((member) => member?.avatar).filter(Boolean)
-    : [otherMember?.avatar].filter(Boolean)
+    : [otherMember?.avatar].filter(Boolean);
 
+  //Audio calling logic
   const handleAudioCall = async () => {
-    const data = await navigator.mediaDevices.getUserMedia({
+    const audioCall = await navigator.mediaDevices.getUserMedia({
       audio: true
     });
 
@@ -45,12 +59,48 @@ const ChatHeader = ({ chat, user }) => {
       chatId: chat._id.toString(),
       calledId: calledId._id.toString(),
       participant: calledId,
-      localStream: data,
+      localStream: audioCall,
       isCaller: true,
     });
   };
 
-  const handleVideoCall = () => { };
+  //video calling logic
+  const handleVideoCall = async () => {
+    const calledMember = members.find(
+      (member) => member?._id?.toString() !== user?._id?.toString()
+    );
+    if (
+      !calledMember ||
+      isGroupChat ||
+      outgoingVideoCall ||
+      activeVideoCall ||
+      incomingVideoCall
+    ) return;
+
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+      const call = {
+        callerId: user._id.toString(),
+        chatId: chat._id.toString(),
+        calledId: calledMember._id.toString(),
+        participant: calledMember,
+        localStream: videoStream,
+        isCaller: true,
+      };
+
+      socket.emit(NEW_VIDEO_CALL_ALERT, {
+        calledId: call.calledId,
+        chatId: call.chatId,
+      });
+      setOutgoingVideoCall(call);
+    } catch (error) {
+      console.error("Unable to access camera or microphone for video call:", error);
+      toast.error(error.message || "Unable to access your camera or microphone.");
+    }
+  };
 
   const handleAccept = () => {
     console.log("call accepted");
@@ -78,7 +128,35 @@ const ChatHeader = ({ chat, user }) => {
     setIncomingCall(null);
   };
 
-  console.log(incomingCall)
+  const handleAcceptVideoCall = () => {
+    const { callerInfo, chatId } = incomingVideoCall;
+    const callerId = callerInfo._id.toString();
+    const calledId = user._id.toString();
+
+    socket.emit(ACCEPT_VIDEO_CALL, {
+      callerId,
+      calledId,
+      chatId,
+    });
+    setActiveVideoCall({
+      callerId,
+      calledId,
+      chatId: chatId.toString(),
+      participant: callerInfo,
+      isCaller: false,
+    });
+    setIncomingVideoCall(null);
+  };
+
+  const handleRejectVideoCall = () => {
+    const { callerInfo, chatId } = incomingVideoCall;
+    socket.emit(END_VIDEO_CALL, {
+      callerId: callerInfo._id.toString(),
+      calledId: user._id.toString(),
+      chatId,
+    });
+    setIncomingVideoCall(null);
+  };
 
   useEffect(() => {
     const handleIncomingCall = ({callerInfo, chatId }) => {
@@ -94,6 +172,26 @@ const ChatHeader = ({ chat, user }) => {
       socket.off(NEW_AUDIO_CALL_ALERT, handleIncomingCall);
     }
   }, [socket]);
+
+  useEffect(() => {
+    const handleIncomingVideoCall = ({ callerInfo, chatId }) => {
+      setIncomingVideoCall({ callerInfo, chatId });
+    };
+
+    socket.on(NEW_VIDEO_CALL_ALERT, handleIncomingVideoCall);
+    return () => socket.off(NEW_VIDEO_CALL_ALERT, handleIncomingVideoCall);
+  }, [socket]);
+
+  useEffect(() => {
+    const handleVideoCallAccepted = ({ chatId }) => {
+      if (!outgoingVideoCall || outgoingVideoCall.chatId !== chatId) return;
+      setActiveVideoCall({ ...outgoingVideoCall, isCaller: true });
+      setOutgoingVideoCall(null);
+    };
+
+    socket.on(ACCEPT_VIDEO_CALL, handleVideoCallAccepted);
+    return () => socket.off(ACCEPT_VIDEO_CALL, handleVideoCallAccepted);
+  }, [socket, outgoingVideoCall]);
 
   useEffect(() => {
     const handleCallAccepted = ({
@@ -167,7 +265,10 @@ const ChatHeader = ({ chat, user }) => {
             </IconButton>
           </Tooltip>
           <Tooltip title="Video call">
-            <IconButton aria-label="Video call" sx={{ color: 'primary.main' }}
+            <IconButton
+              aria-label="Video call"
+              disabled={isGroupChat || !!(incomingVideoCall || outgoingVideoCall || activeVideoCall)}
+              sx={{ color: 'primary.main' }}
               onClick={() => handleVideoCall()}
             >
               <VideocamIcon />
@@ -180,6 +281,12 @@ const ChatHeader = ({ chat, user }) => {
         caller={incomingCall?.callerInfo}
         onAccept={handleAccept}
         onReject={handleReject}
+      />
+      <VideoCallDialog
+        open={!!incomingVideoCall}
+        caller={incomingVideoCall?.callerInfo}
+        onAccept={handleAcceptVideoCall}
+        onReject={handleRejectVideoCall}
       />
 
       <AudioCall
@@ -195,8 +302,31 @@ const ChatHeader = ({ chat, user }) => {
           setOutgoingCall(null);
           setActiveCall(null);
         }} />
+
+      {(activeVideoCall || outgoingVideoCall || incomingVideoCall) && (
+        <VideoCall
+          open={!!(activeVideoCall || outgoingVideoCall)}
+          listenForOffer={!!incomingVideoCall}
+          isCaller={!!(activeVideoCall || outgoingVideoCall)?.isCaller}
+          startCall={!!activeVideoCall?.isCaller}
+          callerId={(activeVideoCall || outgoingVideoCall)?.callerId || incomingVideoCall?.callerInfo?._id?.toString()}
+          calledId={(activeVideoCall || outgoingVideoCall)?.calledId || user?._id?.toString()}
+          chatId={(activeVideoCall || outgoingVideoCall)?.chatId || incomingVideoCall?.chatId?.toString()}
+          participant={(activeVideoCall || outgoingVideoCall)?.participant || incomingVideoCall?.callerInfo}
+          localStream={(activeVideoCall || outgoingVideoCall)?.localStream}
+          onEnd={() => {
+            setOutgoingVideoCall(null);
+            setActiveVideoCall(null);
+          }}
+        />
+      )}
     </>
   )
 }
 
 export default ChatHeader
+
+ChatHeader.propTypes = {
+  chat: PropTypes.object,
+  user: PropTypes.object,
+};
