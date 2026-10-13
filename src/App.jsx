@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectRoute from './components/auth/ProtectRoute';
 import { LayoutLoader } from './components/layouts/Loaders';
@@ -13,9 +13,10 @@ import { SocketProvider } from './socket';
 // importing admin pages
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
-const MessageMangement = lazy(() => import("./pages/admin/MessageMangement"));
 const ChatManagement = lazy(() => import("./pages/admin/ChatManagement"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 
 // importing all pages routes
 const Home = lazy(() => import("./pages/Home"));
@@ -38,7 +39,7 @@ const App = () => {
         withCredentials:true
       })
       .then(({data}) => dispatch(userExists(data.user)))
-      .catch((err) => dispatch(userNotExists()));
+      .catch(() => dispatch(userNotExists()));
 
   }, [dispatch]);
 
@@ -77,7 +78,8 @@ const App = () => {
           <Route path='/admin/dashboard' element={<Dashboard />} />
           <Route path='/admin/users' element={<UserManagement />} />
           <Route path='/admin/chats' element={<ChatManagement />} />
-          <Route path='/admin/messages' element={<MessageMangement />} />
+          <Route path='/admin/reports' element={<Reports />} />
+          <Route path='/admin/audit-logs' element={<AuditLogs />} />
 
           <Route path='*' element={
             <NotFound />

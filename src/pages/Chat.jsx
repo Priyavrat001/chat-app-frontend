@@ -1,7 +1,9 @@
 import { useInfiniteScrollTop } from "6pp";
 import { AttachFile as AttachFileIcon, Send as SendIcon } from '@mui/icons-material';
-import { IconButton, Stack } from '@mui/material';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack, TextField } from '@mui/material';
+import axios from "axios";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import PropTypes from "prop-types";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -13,6 +15,7 @@ import MessageComponent from '../components/shared/MessageComponent';
 import { InputBox } from '../components/styles/StyledComponents';
 import ReplySuggestions from '../components/ai/ReplySuggestions';
 import { grayColor, orange } from '../constants/color';
+import { server } from '../constants/config';
 import { ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_STATUS, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
 import { useErrors, useSocketEvent } from '../hooks/hook';
 import { v4 as uuid } from 'uuid';
@@ -39,6 +42,10 @@ const Chat = ({ chatId }) => {
   const [page, setPage] = useState(1);
   const [userTyping, setUserTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [reportMessage, setReportMessage] = useState(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   const typingTimeOut = useRef(null);
 
@@ -66,7 +73,7 @@ const Chat = ({ chatId }) => {
   const handleFileOpen = (e) => {
     dispatch(setIsFileMenu(true));
     setFileMenuEnchor(e.currentTarget);
-  };
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -108,13 +115,41 @@ const Chat = ({ chatId }) => {
     messageInputRef.current?.focus();
   };
 
+  const submitReport = async (event) => {
+    event.preventDefault();
+    if (!reportMessage || !reportReason.trim()) return;
+
+    setReportSubmitting(true);
+    setReportError("");
+    try {
+      await axios.post(`${server}/user/report`, {
+        targetMessage: reportMessage._id,
+        reason: reportReason.trim(),
+      }, { withCredentials: true });
+      toast.success("Message reported. Thank you for helping keep the community safe.");
+      setReportMessage(null);
+      setReportReason("");
+    } catch (requestError) {
+      setReportError(requestError.response?.data?.message || "Could not submit this report.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+  const closeReportDialog = () => {
+    if (reportSubmitting) return;
+    setReportMessage(null);
+    setReportReason("");
+    setReportError("");
+  };
+
   const messageChangeHanlder = (e)=>{
     setMessage(e.target.value);
 
     if(!userTyping){
       socket.emit(START_TYPING, {members: memberIds, chatId});
       setUserTyping(true);
-    };
+    }
 
     if(typingTimeOut.current) clearTimeout(typingTimeOut.current);
 
@@ -131,7 +166,7 @@ const Chat = ({ chatId }) => {
 
   useEffect(() => {
    if(chatDetails.isError) return navigate("/")
-  }, [chatDetails.isError]);
+  }, [chatDetails.isError, navigate]);
   
   
 
@@ -261,7 +296,7 @@ const Chat = ({ chatId }) => {
 
           {
             allMessages.map((i) => (
-              <MessageComponent key={i._id} message={i} user={user} />
+              <MessageComponent key={i._id} message={i} user={user} onReport={setReportMessage} />
             ))
           }
 
@@ -332,8 +367,45 @@ const Chat = ({ chatId }) => {
         </form>
       </Stack>
       <FileMenu anchorE1={fileMenuEnchor} chatId={chatId}/>
+      <Dialog
+        open={Boolean(reportMessage)}
+        onClose={closeReportDialog}
+        fullWidth
+        maxWidth="xs"
+      >
+        <form onSubmit={submitReport}>
+          <DialogTitle>Report this message</DialogTitle>
+          <DialogContent>
+            <Stack spacing={1.5} sx={{ pt: 1 }}>
+              <Alert severity="info">Reports are reviewed by authorized moderators. Only this message and your reason are shared for review.</Alert>
+              <TextField
+                autoFocus
+                multiline
+                minRows={3}
+                inputProps={{ maxLength: 1000 }}
+                label="Why are you reporting this message?"
+                value={reportReason}
+                onChange={(event) => setReportReason(event.target.value)}
+                required
+                error={Boolean(reportError)}
+                helperText={reportError || `${reportReason.length}/1000`}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeReportDialog} disabled={reportSubmitting}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={reportSubmitting || !reportReason.trim()}>
+              {reportSubmitting ? "Submitting..." : "Submit report"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </>
   )
 }
+
+Chat.propTypes = {
+  chatId: PropTypes.string,
+};
 
 export default AppLayout()(Chat);

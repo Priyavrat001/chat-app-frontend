@@ -2,7 +2,7 @@ import { useFileHandler, useInputValidation } from "6pp";
 import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
 import { Avatar, Button, Container, IconButton, Paper, Stack, TextField, Typography } from "@mui/material";
 import axios from 'axios';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { VisualyHiddenInput } from '../components/styles/StyledComponents';
@@ -19,6 +19,7 @@ const Login = () => {
     const dispatch = useDispatch();
 
     const name = useInputValidation("");
+    const [email, setEmail] = useState("");
     const username = useInputValidation("", userNameValidators);
     const password = useInputValidation();
     const bio = useInputValidation("");
@@ -73,6 +74,7 @@ const Login = () => {
 
         formData.append("avatar", avatar.file);
         formData.append("name", name.value);
+        if (email.trim()) formData.append("email", email.trim());
         formData.append("username", username.value);
         formData.append("password", password.value);
         formData.append("bio", bio.value);
@@ -246,6 +248,15 @@ const Login = () => {
                                         variant='outlined'
                                         value={name.value}
                                         onChange={name.changeHandler}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        type="email"
+                                        label="Email (optional)"
+                                        margin="normal"
+                                        variant="outlined"
+                                        value={email}
+                                        onChange={(event) => setEmail(event.target.value)}
                                     />
                                     <TextField
                                         required

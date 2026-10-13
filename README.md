@@ -143,8 +143,9 @@ Other component groups:
 | `/admin` | Admin login | Separate admin-key verification flow. The key is supplied by the backend configuration and is not documented here. |
 | `/admin/dashboard` | Admin dashboard | Requires the Redux admin session. |
 | `/admin/users` | User management | Requires the Redux admin session. |
-| `/admin/chats` | Chat management | Requires the Redux admin session. |
-| `/admin/messages` | Message management | Requires the Redux admin session. |
+| `/admin/chats` | Group management | Requires an admin session or an active moderator account. |
+| `/admin/reports` | Reports and moderation | Requires an admin session or an active moderator account. Shows reported items only, not all private messages. |
+| `/admin/audit-logs` | Audit logs | Requires the Redux admin session. Shows reasoned moderation and account/group changes. |
 | `*` | Not Found | Fallback for unknown paths. |
 
 User routes are protected by `ProtectRoute` and wrapped by the socket provider. The admin layout separately checks `auth.isAdmin`. On reload, `App.jsx` checks the user session through `/user/myprofile`; the backend cookie and credentialed CORS setup are part of this flow.
@@ -197,7 +198,7 @@ Text messages are sent over the `NEW_MESSAGE` socket event and acknowledged afte
 | DELETE | `chat/:chatId` | Delete a chat/group. |
 | DELETE | `chat/leave/:chatId` | Leave a group. |
 
-Additional Axios requests include `user/myprofile`, `user/login`, `user/new`, `user/logout`, `admin/verify`, `admin/`, `admin/logout`, and admin reporting endpoints (`admin/stats`, `admin/users`, `admin/chats`, `admin/messages`). Their requests are implemented in `App.jsx`, `Login.jsx`, `Header.jsx`, admin thunks, and admin pages.
+Additional Axios requests include `user/myprofile`, `user/login`, `user/new`, `user/logout`, `user/report`, `admin/verify`, `admin/`, `admin/logout`, and admin endpoints (`admin/stats`, `admin/users`, `admin/groups`, `admin/reports`, `admin/health`, and `admin/audit-logs`). Users can report a specific incoming message from the message row; the dialog explains that only the selected item and report reason are exposed for review. The admin dashboard provides daily, weekly, and monthly activity charts alongside API, database, socket, Cloudinary, and AI telemetry. Admin mutations require a reason and are recorded in the audit log.
 
 ## Audio calling
 
@@ -322,13 +323,14 @@ Video signaling event names are declared in `src/constants/events.js` and mirror
 
 ## Admin interface
 
-The admin workspace keeps its existing routes, authentication, API requests, and data operations while presenting a refreshed responsive interface:
+The admin workspace uses the backend's authenticated admin cookie and responsive management pages:
 
-- `src/components/layouts/admin/AdminLayout.jsx` provides the dark navigation sidebar, selected-page styling, workspace header, and a mobile navigation drawer. The sidebar links to Overview, Users, Chats, and Messages, and retains the existing admin logout action.
+- `src/components/layouts/admin/AdminLayout.jsx` provides the dark navigation sidebar, selected-page styling, workspace header, and a mobile navigation drawer. The sidebar links to Overview, Users, Groups, Reports, and Audit logs.
 - `src/pages/admin/AdminLogin.jsx` presents the existing secret-key login flow in a responsive split-panel layout.
-- `src/pages/admin/Dashboard.jsx` arranges the existing statistics into metric cards, message activity, and direct-versus-group chat summaries.
-- `src/components/WighetComponent.jsx` styles the Users, Chats, and Messages metric cards.
-- `src/components/specifics/admin/Charts.jsx` contains the dashboard line and doughnut charts.
-- `src/components/shared/admin/Table.jsx` styles admin data grids and provides quick search, sorting, and pagination controls for the existing Users, Chats, and Messages rows.
+- `src/pages/admin/Dashboard.jsx` shows user, activity, message, group, and direct-conversation metrics; daily/weekly/monthly growth and messaging charts; and system/AI health indicators.
+- `src/pages/admin/UserManagement.jsx` supports searchable, paginated user review, account status changes, moderator assignment, and activity counts.
+- `src/pages/admin/ChatManagement.jsx` supports group search, restriction, archival, and restoration.
+- `src/pages/admin/Reports.jsx` reviews only submitted reports and records status decisions with reasons.
+- `src/pages/admin/AuditLogs.jsx` displays the recorded administrator actions.
 
-The admin pages continue to load their data from the existing `/admin/stats`, `/admin/users`, `/admin/chats`, and `/admin/messages` endpoints. UI styling does not replace backend admin authorization.
+The admin pages use `/admin/stats`, `/admin/users`, `/admin/groups`, `/admin/reports`, `/admin/health`, and `/admin/audit-logs`. The former unrestricted `/admin/messages` endpoint is intentionally not part of the admin UI.

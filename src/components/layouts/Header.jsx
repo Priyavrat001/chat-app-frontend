@@ -1,7 +1,8 @@
-import { Add as AddIcon, Group as GroupIcon, Logout as LogoutIcon, Menu as MenuIcon, Notifications as NotificationsIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Add as AddIcon, AdminPanelSettingsRounded as ModeratorIcon, Group as GroupIcon, Logout as LogoutIcon, Menu as MenuIcon, Notifications as NotificationsIcon, Search as SearchIcon } from "@mui/icons-material";
 import { AppBar, Backdrop, Badge, Box, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
+import PropTypes from "prop-types";
 import axios from 'axios';
-import React, { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,7 @@ const Header = () => {
     const dispatch = useDispatch();
 
     const { isSearch, isNotifactions, isNewGroup } = useSelector(state => state.misc);
+    const { user } = useSelector(state => state.auth);
     const {data} = useGetNotificaionsQuery();
 
     const allRequest = data?.allRequest?.length;
@@ -99,6 +101,13 @@ const Header = () => {
                                 icon={<GroupIcon />}
                                 onClick={navigateToGroup}
                             />
+                            {user?.role === "moderator" && (
+                                <IconBtn
+                                    title="Moderation workspace"
+                                    icon={<ModeratorIcon />}
+                                    onClick={() => navigate("/admin/reports")}
+                                />
+                            )}
                             <IconBtn
                                 title={"Notifictions"}
                                 icon={<NotificationsIcon />}
@@ -161,4 +170,11 @@ const IconBtn = ({ title, icon, onClick, value }) => {
     )
 }
 
-export default Header
+IconBtn.propTypes = {
+    title: PropTypes.string.isRequired,
+    icon: PropTypes.node.isRequired,
+    onClick: PropTypes.func.isRequired,
+    value: PropTypes.number,
+};
+
+export default Header;

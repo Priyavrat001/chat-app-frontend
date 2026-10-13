@@ -1,5 +1,5 @@
-import { Box, Stack, Typography } from '@mui/material';
-import { Done as DoneIcon, DoneAll as DoneAllIcon } from '@mui/icons-material';
+import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Done as DoneIcon, DoneAll as DoneAllIcon, FlagOutlined as FlagIcon } from '@mui/icons-material';
 import { lightBlue } from '@mui/material/colors';
 import moment from 'moment';
 import PropTypes from 'prop-types';
@@ -8,7 +8,7 @@ import { fileFormat } from '../../lib/features';
 import RenderContent from './RenderContent';
 import { motion } from "framer-motion";
 
-const MessageComponent = ({ message, user }) => {
+const MessageComponent = ({ message, user, onReport }) => {
 
     const { sender, content, attachment = [], createdAt, status } = message;
 
@@ -54,6 +54,18 @@ const MessageComponent = ({ message, user }) => {
                 <Typography variant="caption" color="text.secondary">
                     {timeAgo}
                 </Typography>
+                {!sameSender && onReport && (
+                    <Tooltip title="Report this message">
+                        <IconButton
+                            size="small"
+                            aria-label="Report this message"
+                            onClick={() => onReport(message)}
+                            sx={{ p: 0.25, color: "text.secondary" }}
+                        >
+                            <FlagIcon sx={{ fontSize: "0.9rem" }} />
+                        </IconButton>
+                    </Tooltip>
+                )}
                 {sameSender && status !== "sending" && (
                     status === "delivered" || status === "read" ? (
                         <DoneAllIcon
@@ -92,6 +104,7 @@ MessageComponent.propTypes = {
     user: PropTypes.shape({
         _id: PropTypes.string,
     }).isRequired,
+    onReport: PropTypes.func,
 };
 
 export default memo(MessageComponent)

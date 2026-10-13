@@ -4,7 +4,8 @@ import {
   ExitToAppRounded as ExitToAppIcon,
   GroupsRounded as GroupsIcon,
   MenuRounded as MenuIcon,
-  MessageRounded as MessageIcon,
+  FactCheckRounded as ReportsIcon,
+  HistoryRounded as AuditIcon,
   ShieldRounded as ShieldIcon,
   PeopleAltRounded as UsersIcon,
 } from "@mui/icons-material";
@@ -24,28 +25,44 @@ import { alpha } from "@mui/material/styles";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link as LinkComponent, Navigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { server } from "../../../constants/config";
+import { userNotExists } from "../../../redux/reducers/auth";
 import { adminLogout } from "../../../redux/thunks/admin";
 
 const adminTabs = [
   { name: "Overview", path: "/admin/dashboard", icon: <DashboardIcon /> },
   { name: "Users", path: "/admin/users", icon: <UsersIcon /> },
   { name: "Chats", path: "/admin/chats", icon: <GroupsIcon /> },
-  { name: "Messages", path: "/admin/messages", icon: <MessageIcon /> },
+  { name: "Reports", path: "/admin/reports", icon: <ReportsIcon /> },
+  { name: "Audit logs", path: "/admin/audit-logs", icon: <AuditIcon /> },
 ];
 
 const pageDetails = {
   "/admin/dashboard": ["Overview", "Your workspace at a glance"],
   "/admin/users": ["Users", "Manage and review your community"],
   "/admin/chats": ["Chats", "Explore conversations across your workspace"],
-  "/admin/messages": ["Messages", "Review recent messages and attachments"],
+  "/admin/reports": ["Reports & moderation", "Review reports and record decisions"],
+  "/admin/audit-logs": ["Audit logs", "Review sensitive administrative actions"],
 };
 
-const SideBar = ({ onNavigate, mobile = false }) => {
+const SideBar = ({ onNavigate, mobile = false, isModerator = false }) => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const logoutHandler = () => {
-    dispatch(adminLogout());
+  const logoutHandler = async () => {
+    if (isModerator) {
+      try {
+        const { data } = await axios.get(`${server}/user/logout`, { withCredentials: true });
+        dispatch(userNotExists());
+        toast.success(data.message);
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Could not sign out.");
+      }
+    } else {
+      dispatch(adminLogout());
+    }
     onNavigate?.();
   };
 
@@ -94,7 +111,7 @@ const SideBar = ({ onNavigate, mobile = false }) => {
         Workspace
       </Typography>
       <Stack component="nav" aria-label="Admin navigation" spacing={0.75}>
-        {adminTabs.map((tab) => {
+        {adminTabs.filter((tab) => !isModerator || ["/admin/chats", "/admin/reports"].includes(tab.path)).map((tab) => {
           const selected = location.pathname === tab.path;
           return (
             <Button
@@ -164,7 +181,8 @@ const SideBar = ({ onNavigate, mobile = false }) => {
 };
 
 const AdminLayout = ({ children }) => {
-  const { isAdmin } = useSelector((state) => state.auth);
+  const { isAdmin, user } = useSelector((state) => state.auth);
+  const isModerator = !isAdmin && user?.role === "moderator";
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const [pageTitle, pageSubtitle] = pageDetails[location.pathname] || [
@@ -172,7 +190,9 @@ const AdminLayout = ({ children }) => {
     "Workspace management",
   ];
 
-  if (!isAdmin) return <Navigate to="/admin" />;
+  if (!isAdmin && !isModerator) return <Navigate to="/admin" />;
+  if (isModerator && !["/admin/reports", "/admin/chats"].includes(location.pathname))
+    return <Navigate to="/admin/reports" replace />;
 
   return (
     <Box
@@ -194,7 +214,7 @@ const AdminLayout = ({ children }) => {
           overflow: "auto",
         }}
       >
-        <SideBar />
+        <SideBar isModerator={isModerator} />
       </Box>
 
       <Box component="main" sx={{ minWidth: 0 }}>
@@ -254,7 +274,7 @@ const AdminLayout = ({ children }) => {
         onClose={() => setMobileOpen(false)}
         PaperProps={{ sx: { width: 280, border: 0 } }}
       >
-        <SideBar mobile onNavigate={() => setMobileOpen(false)} />
+        <SideBar mobile isModerator={isModerator} onNavigate={() => setMobileOpen(false)} />
       </Drawer>
     </Box>
   );
@@ -265,6 +285,7 @@ export default AdminLayout;
 SideBar.propTypes = {
   onNavigate: PropTypes.func,
   mobile: PropTypes.bool,
+  isModerator: PropTypes.bool,
 };
 
 AdminLayout.propTypes = {

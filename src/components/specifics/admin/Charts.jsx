@@ -61,13 +61,13 @@ const lineChartOptions = {
   },
 };
 
-const LineChart = ({ vlaue = [] }) => {
+const LineChart = ({ value = [], labels, label = "Messages", color = "#6258e8" }) => {
   const data = {
-    labels: getLastSevenDays(),
+    labels: labels?.length ? labels : getLastSevenDays(),
     datasets: [
       {
-        data: vlaue,
-        label: "Messages",
+        data: value,
+        label,
         fill: true,
         backgroundColor: (context) => {
           const chart = context.chart;
@@ -78,13 +78,13 @@ const LineChart = ({ vlaue = [] }) => {
           gradient.addColorStop(1, "rgba(99,102,241,0)");
           return gradient;
         },
-        borderColor: "#6258e8",
+        borderColor: color,
         borderWidth: 3,
         tension: 0.38,
         pointRadius: 3,
         pointHoverRadius: 6,
         pointBackgroundColor: "#fff",
-        pointBorderColor: "#6258e8",
+        pointBorderColor: color,
         pointBorderWidth: 2,
       },
     ],
@@ -129,7 +129,10 @@ const DoughnutChart = ({ vlaue = [], labels = [] }) => {
 export { LineChart, DoughnutChart };
 
 LineChart.propTypes = {
-  vlaue: PropTypes.arrayOf(PropTypes.number),
+  value: PropTypes.arrayOf(PropTypes.number),
+  labels: PropTypes.arrayOf(PropTypes.string),
+  label: PropTypes.string,
+  color: PropTypes.string,
 };
 
 DoughnutChart.propTypes = {
