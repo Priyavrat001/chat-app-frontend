@@ -3,12 +3,16 @@ import { geOrSaveFromStorage } from "../../lib/features";
 import { NEW_MESSAGE_ALERT } from "../../constants/event";
 
 
+const storedNewMessageAlerts = geOrSaveFromStorage({
+    key: NEW_MESSAGE_ALERT,
+    get: true,
+});
+
 const initialState = {
     notificationCount:0,
-    newMessageAlert: geOrSaveFromStorage({key:NEW_MESSAGE_ALERT, get:true}) || [{
-        chatId:"",
-        count:0,
-    }]
+    newMessageAlert: Array.isArray(storedNewMessageAlerts)
+        ? storedNewMessageAlerts
+        : [],
 }
 
 const chatSlice = createSlice({

@@ -1,14 +1,16 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
+import { Done as DoneIcon, DoneAll as DoneAllIcon } from '@mui/icons-material';
 import { lightBlue } from '@mui/material/colors';
 import moment from 'moment';
-import React, { memo } from 'react'
+import PropTypes from 'prop-types';
+import { memo } from 'react'
 import { fileFormat } from '../../lib/features';
 import RenderContent from './RenderContent';
 import { motion } from "framer-motion";
 
 const MessageComponent = ({ message, user }) => {
 
-    const { sender, content, attachment = [], createdAt } = message;
+    const { sender, content, attachment = [], createdAt, status } = message;
 
     const sameSender = sender?._id === user._id;
 
@@ -48,11 +50,48 @@ const MessageComponent = ({ message, user }) => {
             }
 
 
-            <Typography variant="caption" color="text.secondary">
-                {timeAgo}
-            </Typography>
+            <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
+                <Typography variant="caption" color="text.secondary">
+                    {timeAgo}
+                </Typography>
+                {sameSender && status !== "sending" && (
+                    status === "delivered" || status === "read" ? (
+                        <DoneAllIcon
+                            aria-label={status === "read" ? "Read" : "Delivered"}
+                            titleAccess={status === "read" ? "Read" : "Delivered"}
+                            fontSize="small"
+                            sx={{
+                                fontSize: "1rem",
+                                color: status === "read" ? "info.main" : "text.secondary",
+                            }}
+                        />
+                    ) : (
+                        <DoneIcon
+                            aria-label="Sent"
+                            titleAccess="Sent"
+                            sx={{ fontSize: "1rem", color: "text.secondary" }}
+                        />
+                    )
+                )}
+            </Stack>
         </motion.div>
     )
 }
+
+MessageComponent.propTypes = {
+    message: PropTypes.shape({
+        sender: PropTypes.shape({
+            _id: PropTypes.string,
+            name: PropTypes.string,
+        }),
+        content: PropTypes.string,
+        attachment: PropTypes.arrayOf(PropTypes.object),
+        createdAt: PropTypes.string,
+        status: PropTypes.string,
+    }).isRequired,
+    user: PropTypes.shape({
+        _id: PropTypes.string,
+    }).isRequired,
+};
 
 export default memo(MessageComponent)

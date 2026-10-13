@@ -1,21 +1,24 @@
 import { useInfiniteScrollTop } from "6pp";
 import { AttachFile as AttachFileIcon, Send as SendIcon } from '@mui/icons-material';
 import { IconButton, Stack } from '@mui/material';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import FileMenu from '../components/dialogs/FileMenu';
 import AppLayout from '../components/layouts/AppLayout';
 import ChatHeader from '../components/layouts/ChatHeader';
 import { LayoutLoader, TypingLoader } from '../components/layouts/Loaders';
 import MessageComponent from '../components/shared/MessageComponent';
 import { InputBox } from '../components/styles/StyledComponents';
+import ReplySuggestions from '../components/ai/ReplySuggestions';
 import { grayColor, orange } from '../constants/color';
-import { ALERT, CHAT_JOINED, CHAT_LEAVED, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
+import { ALERT, CHAT_JOINED, CHAT_LEAVED, MESSAGE_STATUS, NEW_MESSAGE, START_TYPING, STOP_TYPING } from '../constants/event';
 import { useErrors, useSocketEvent } from '../hooks/hook';
 import { v4 as uuid } from 'uuid';
 import { useChatDetailsQuery, useGetMessagesQuery } from '../redux/api/api';
 import { removeNewMessageAlert } from '../redux/reducers/chat';
+import { closeAiDialog } from '../redux/reducers/ai';
 import { setIsFileMenu } from '../redux/reducers/misc';
 import { getSocket } from '../socket';
 
@@ -24,6 +27,7 @@ const Chat = ({ chatId }) => {
 
   const containerRef = useRef(null);
   const bottomRef = useRef(null);
+  const messageInputRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -69,9 +73,39 @@ const Chat = ({ chatId }) => {
 
     if (!message.trim()) return;
 
-    // Emitting the message to the server (send member ids)
-    socket.emit(NEW_MESSAGE, { chatId, members: memberIds, message });
+    const temporaryId = uuid();
+    const optimisticMessage = {
+      _id: temporaryId,
+      content: message.trim(),
+      sender: { _id: user._id, name: user.name },
+      chat: chatId,
+      createdAt: new Date().toISOString(),
+      status: "sending",
+      attachment: [],
+    };
+
+    setMessages((previous) => [...previous, optimisticMessage]);
+    socket.emit(NEW_MESSAGE, { chatId, message: message.trim() }, (result) => {
+      if (!result?.success) {
+        setMessages((previous) =>
+          previous.filter((item) => item._id !== temporaryId),
+        );
+        toast.error(result?.message || "Unable to send message.");
+        return;
+      }
+
+      setMessages((previous) =>
+        previous.map((item) =>
+          item._id === temporaryId ? result.message : item,
+        ),
+      );
+    });
     setMessage("");
+  };
+
+  const handleSuggestionSelect = (suggestion) => {
+    setMessage(suggestion);
+    messageInputRef.current?.focus();
   };
 
   const messageChangeHanlder = (e)=>{
@@ -92,21 +126,6 @@ const Chat = ({ chatId }) => {
   }
 
   useEffect(() => {
-
-    socket.emit(CHAT_JOINED, {userId:user._id, members})
-
-    dispatch(removeNewMessageAlert(chatId));
-
-    return () => {
-      setMessages([]);
-      setMessage("");
-      setOldMessages([]);
-      setPage(1);
-      socket.emit(CHAT_LEAVED, {userId:user._id, members})
-    };
-  }, [chatId]);
-
-  useEffect(() => {
     if(bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
   }, [messages]);
 
@@ -120,10 +139,38 @@ const Chat = ({ chatId }) => {
     (data) => {
       if (data.chatId !== chatId) return;
 
-      setMessages((prev) => [...prev, data.message]);
+      setMessages((previous) => {
+        const existingIndex = previous.findIndex(
+          (item) => item._id === data.message._id,
+        );
+        if (existingIndex === -1) return [...previous, data.message];
+        return previous.map((item, index) =>
+          index === existingIndex ? data.message : item,
+        );
+      });
     },
     [chatId]
   );
+
+  const messageStatusListener = useCallback((data) => {
+    if (data.chatId !== chatId) return;
+
+    const applyReceipt = (items) =>
+      items.map((item) =>
+        item._id === data.messageId
+          ? {
+              ...item,
+              deliveredTo: data.deliveredTo,
+              readBy: data.readBy,
+              recipientCount: data.recipientCount,
+              status: data.status,
+            }
+          : item,
+      );
+
+    setMessages(applyReceipt);
+    setOldMessages(applyReceipt);
+  }, [chatId, setOldMessages]);
 
   const startTypingListener = useCallback(
     (data) => {
@@ -157,15 +204,38 @@ const Chat = ({ chatId }) => {
   setMessages((prev)=>[...prev, messageForAlert]);
   },[chatId]);
 
-  const eventHandler = {
+  const eventHandler = useMemo(() => ({
     [ALERT]: alertListener,
     [NEW_MESSAGE]: newMessagesListener,
+    [MESSAGE_STATUS]: messageStatusListener,
     [START_TYPING]: startTypingListener,
     [STOP_TYPING]: stopTypingListener,
-  };
+  }), [
+    alertListener,
+    messageStatusListener,
+    newMessagesListener,
+    startTypingListener,
+    stopTypingListener,
+  ]);
 
 
   useSocketEvent(socket, eventHandler);
+
+  useEffect(() => {
+    if (!chatId || !chatDetails.data?.chat || !user?._id) return undefined;
+
+    socket.emit(CHAT_JOINED, { chatId });
+    dispatch(removeNewMessageAlert(chatId));
+
+    return () => {
+      setMessages([]);
+      setMessage("");
+      setOldMessages([]);
+      setPage(1);
+      dispatch(closeAiDialog());
+      socket.emit(CHAT_LEAVED, { chatId });
+    };
+  }, [chatId, chatDetails.data?.chat, dispatch, setOldMessages, socket, user?._id]);
 
   const allMessages = [...oldMessages, ...messages];
 
@@ -203,35 +273,62 @@ const Chat = ({ chatId }) => {
 
         </Stack>
 
-        <form style={{ height: "10%", minHeight: "4.5rem", flexShrink: 0 }} onSubmit={handleSubmit}>
+        <form
+          style={{ minHeight: "4.5rem", flexShrink: 0 }}
+          onSubmit={handleSubmit}
+        >
+          <Stack spacing={1} sx={{ py: 1.25 }}>
+            <ReplySuggestions
+              key={chatId}
+              chatId={chatId}
+              onSelect={handleSuggestionSelect}
+            />
+            <Stack
+              direction="row"
+              alignItems="center"
+              position="relative"
+              sx={{ px: 1.5 }}
+            >
+              <IconButton
+                aria-label="Attach a file"
+                sx={{ rotate: "30deg" }}
+                onClick={handleFileOpen}
+              >
+                <AttachFileIcon />
+              </IconButton>
+              <InputBox
+                ref={messageInputRef}
+                aria-label="Type a message"
+                placeholder="Type message here..."
+                sx={{
+                  height: "2.75rem",
+                  px: 2,
+                  outline: "none",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+                value={message}
+                onChange={messageChangeHanlder}
+              />
 
-        <Stack direction={"row"} height={"100%"} padding={"1rem"} alignItems={"center"} position={"relative"}>
-          <IconButton sx={{
-            rotate: "30deg",
-          }}
-          onClick={handleFileOpen}
-          >
-            <AttachFileIcon />
-          </IconButton>
-          <InputBox placeholder='Type message here...' sx={{
-            height: "5vh"
-          }} value={message} onChange={messageChangeHanlder} />
-
-          <IconButton type='submit' sx={{
-            rotate: "-30deg",
-            backgroundColor: orange,
-            color: "white",
-            marginLeft: "1rem",
-            padding: "0.5rem",
-            "&:hover": {
-              backgroundColor: "error.dark",
-            }
-          }}>
-            <SendIcon />
-          </IconButton>
-
-        </Stack>
-
+              <IconButton
+                aria-label="Send message"
+                type="submit"
+                sx={{
+                  rotate: "-30deg",
+                  backgroundColor: orange,
+                  color: "white",
+                  marginLeft: "1rem",
+                  padding: "0.5rem",
+                  "&:hover": {
+                    backgroundColor: "error.dark",
+                  },
+                }}
+              >
+                <SendIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
         </form>
       </Stack>
       <FileMenu anchorE1={fileMenuEnchor} chatId={chatId}/>

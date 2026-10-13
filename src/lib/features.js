@@ -34,8 +34,13 @@ const getLastSevenDays = () => {
 
 
 const geOrSaveFromStorage = ({ key, value, get }) => {
-    // if (get) return localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : null;
-    // else localStorage.setItem(key, JSON.stringify(value));
+    if (get) {
+        const storedValue = localStorage.getItem(key);
+        return storedValue ? JSON.parse(storedValue) : null;
+    }
+
+    localStorage.setItem(key, JSON.stringify(value));
+    return value;
 }
 
 export {

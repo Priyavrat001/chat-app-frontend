@@ -285,3 +285,34 @@ These are code-level observations to help set expectations; they are not configu
 - Never add working credentials, admin keys, session cookies, API tokens, or private deployment values to this README, source code, or a committed environment file.
 - Values prefixed with `VITE_` are public browser configuration. Only put non-secret URLs or other intentionally public values there.
 - The backend is responsible for authentication and authorization. Hiding an admin route in the UI is not a security boundary; the backend must enforce admin access for every protected endpoint.
+
+## Video calling
+
+This section reflects the current implementation and supersedes the earlier video-calling limitation noted under `Current limitations`.
+
+The direct-chat video call flow is implemented in `src/components/layouts/ChatHeader.jsx`, `src/components/call/VideoCallDialog.jsx`, and `src/components/call/VideoCall.jsx`. ChatHeader owns incoming, outgoing, and accepted-call state; the incoming dialog provides accept/decline actions; and the call dialog shows local and remote video with microphone, camera, and end-call controls.
+
+The browser requests camera and microphone access with `navigator.mediaDevices.getUserMedia({ audio: true, video: true })`. After the recipient accepts, the caller creates a WebRTC offer and the recipient answers it. Both peers exchange ICE candidates over Socket.IO, while media travels peer-to-peer rather than through the backend.
+
+| Event | Purpose |
+| --- | --- |
+| `USER_VIDEO_CALL` (`NEW_VIDEO_CALL_ALERT`) | Delivers an incoming-call notification containing caller information and chat ID. |
+| `ACCEPT_VIDEO_CALL` | Notifies the caller that the recipient accepted. |
+| `NEW_VIDEO_CALL_OFFER` / `NEW_VIDEO_CALL_ANSWER` | Exchanges WebRTC session descriptions. |
+| `VIDEO_ICE_CANDIDATE` | Relays peer connection candidates. |
+| `END_VIDEO_CALL` | Notifies the other participant that the call ended. |
+
+Video signaling event names are declared in `src/constants/events.js` and mirrored by the backend. Video calls currently support direct chats, require camera/microphone permission and a secure browser context (HTTPS or localhost), and use Google's public STUN server. TURN is not configured, so some restrictive networks may need a TURN server for reliable connectivity. The backend README documents the corresponding socket payloads and relay behavior.
+
+## Admin interface
+
+The admin workspace keeps its existing routes, authentication, API requests, and data operations while presenting a refreshed responsive interface:
+
+- `src/components/layouts/admin/AdminLayout.jsx` provides the dark navigation sidebar, selected-page styling, workspace header, and a mobile navigation drawer. The sidebar links to Overview, Users, Chats, and Messages, and retains the existing admin logout action.
+- `src/pages/admin/AdminLogin.jsx` presents the existing secret-key login flow in a responsive split-panel layout.
+- `src/pages/admin/Dashboard.jsx` arranges the existing statistics into metric cards, message activity, and direct-versus-group chat summaries.
+- `src/components/WighetComponent.jsx` styles the Users, Chats, and Messages metric cards.
+- `src/components/specifics/admin/Charts.jsx` contains the dashboard line and doughnut charts.
+- `src/components/shared/admin/Table.jsx` styles admin data grids and provides quick search, sorting, and pagination controls for the existing Users, Chats, and Messages rows.
+
+The admin pages continue to load their data from the existing `/admin/stats`, `/admin/users`, `/admin/chats`, and `/admin/messages` endpoints. UI styling does not replace backend admin authorization.

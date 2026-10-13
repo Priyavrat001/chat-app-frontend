@@ -1,5 +1,18 @@
-import { Call as CallIcon, Videocam as VideocamIcon } from '@mui/icons-material'
-import { Avatar, AvatarGroup, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import {
+  AutoAwesome as AutoAwesomeIcon,
+  Call as CallIcon,
+  Videocam as VideocamIcon,
+} from '@mui/icons-material'
+import {
+  Avatar,
+  AvatarGroup,
+  IconButton,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import { getSocket } from '../../socket';
 import {
   ACCEPT_VIDEO_CALL,
@@ -16,9 +29,16 @@ import { ACCEPT_AUDIO_CALL } from '../../constants/event';
 import AudioCall from '../call/AudioCall';
 import VideoCallDialog from '../call/VideoCallDialog';
 import VideoCall from '../call/VideoCall';
+import { useDispatch, useSelector } from 'react-redux';
+import { closeAiDialog, openAiDialog } from '../../redux/reducers/ai';
+import ConversationSummary from '../ai/ConversationSummary';
+import AskChatHistoryDialog from '../ai/AskChatHistoryDialog';
 
 const ChatHeader = ({ chat, user }) => {
 
+  const dispatch = useDispatch();
+  const activeAiDialog = useSelector((state) => state.ai.activeDialog);
+  const [aiMenuAnchor, setAiMenuAnchor] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [outgoingCall, setOutgoingCall] = useState(null);
 
@@ -36,6 +56,10 @@ const ChatHeader = ({ chat, user }) => {
   )
 
   const title = isGroupChat ? chat?.name : otherMember?.name || chat?.name || 'Chat'
+  const isSummaryOpen =
+    activeAiDialog?.type === 'summary' && activeAiDialog.chatId === chat?._id;
+  const isAskHistoryOpen =
+    activeAiDialog?.type === 'ask-history' && activeAiDialog.chatId === chat?._id;
   const avatars = isGroupChat
     ? members.map((member) => member?.avatar).filter(Boolean)
     : [otherMember?.avatar].filter(Boolean);
@@ -220,6 +244,13 @@ const ChatHeader = ({ chat, user }) => {
 
   const callSession = activeCall || outgoingCall;
 
+  const openAiFeature = (type) => {
+    setAiMenuAnchor(null);
+    dispatch(openAiDialog({ type, chatId: chat?._id }));
+  };
+
+  const closeAiFeature = () => dispatch(closeAiDialog());
+
   return (
     <>
       <Stack
@@ -257,6 +288,32 @@ const ChatHeader = ({ chat, user }) => {
         </Stack>
 
         <Stack direction="row" spacing={0.5}>
+          <Tooltip title="AI conversation tools">
+            <span>
+              <IconButton
+                aria-label="AI conversation tools"
+                aria-haspopup="menu"
+                aria-expanded={Boolean(aiMenuAnchor)}
+                disabled={!chat?._id}
+                onClick={(event) => setAiMenuAnchor(event.currentTarget)}
+                sx={{ color: 'primary.main' }}
+              >
+                <AutoAwesomeIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Menu
+            anchorEl={aiMenuAnchor}
+            open={Boolean(aiMenuAnchor)}
+            onClose={() => setAiMenuAnchor(null)}
+          >
+            <MenuItem onClick={() => openAiFeature('summary')}>
+              Summarize conversation
+            </MenuItem>
+            <MenuItem onClick={() => openAiFeature('ask-history')}>
+              Ask about this chat
+            </MenuItem>
+          </Menu>
           <Tooltip title="Audio call">
             <IconButton aria-label="Audio call" sx={{ color: 'success.main' }}
               onClick={() => handleAudioCall()}
@@ -288,6 +345,20 @@ const ChatHeader = ({ chat, user }) => {
         onAccept={handleAcceptVideoCall}
         onReject={handleRejectVideoCall}
       />
+      {isSummaryOpen && (
+        <ConversationSummary
+          chatId={chat._id}
+          open={isSummaryOpen}
+          onClose={closeAiFeature}
+        />
+      )}
+      {isAskHistoryOpen && (
+        <AskChatHistoryDialog
+          chatId={chat._id}
+          open={isAskHistoryOpen}
+          onClose={closeAiFeature}
+        />
+      )}
 
       <AudioCall
         open={!!callSession}

@@ -1,5 +1,5 @@
 import { Drawer, Grid, Skeleton } from '@mui/material'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { NEW_MESSAGE_ALERT, NEW_REQUEST, ONLINE_USERS, REFETCH_CHATS } from '../../constants/event'
@@ -31,7 +31,7 @@ const AppLayout = () => (WrappedComponent) => {
 
     const { isMobile } = useSelector((state) => state.misc);
     const { user } = useSelector((state) => state.auth);
-    const { newMessagesAlert } = useSelector((state) => state.chat);
+    const { newMessageAlert: newMessagesAlert } = useSelector((state) => state.chat);
 
     const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
 
@@ -70,12 +70,17 @@ const AppLayout = () => (WrappedComponent) => {
       setOnlineUsers(data);
     }, []);
 
-    const eventHandlers = {
+    const eventHandlers = useMemo(() => ({
       [NEW_MESSAGE_ALERT]: newMessageAlertListener,
       [NEW_REQUEST]: newRequestListener,
       [REFETCH_CHATS]: refetchListener,
       [ONLINE_USERS]: onlineUsersListener,
-    };
+    }), [
+      newMessageAlertListener,
+      newRequestListener,
+      refetchListener,
+      onlineUsersListener,
+    ]);
 
     useSocketEvent(socket, eventHandlers);
 
