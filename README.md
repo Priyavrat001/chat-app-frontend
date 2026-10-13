@@ -1,6 +1,6 @@
 # Chat Application Frontend
 
-React single-page frontend for a real-time chat application. It supports account login/registration, direct and group chats, messages and attachments, friend requests, notifications, and an admin dashboard. The frontend communicates with the companion Express/Socket.IO backend in `../chat-app-backend`.
+React single-page frontend for a real-time chat application. It supports account login/registration, direct and group chats, messages and attachments, sent/delivered/read receipts, friend requests, notifications, and an admin dashboard. The frontend communicates with the companion Express/Socket.IO backend in `../chat-app-backend`.
 
 > This guide intentionally contains no account credentials, admin keys, tokens, or deployment secrets. Frontend environment values are public once bundled; never put secrets in them.
 
@@ -13,6 +13,7 @@ React single-page frontend for a real-time chat application. It supports account
 - [Application structure](#application-structure)
 - [Routes and access](#routes-and-access)
 - [State and data flow](#state-and-data-flow)
+- [Message delivery and read receipts](#message-delivery-and-read-receipts)
 - [HTTP API usage](#http-api-usage)
 - [Audio calling](#audio-calling)
 - [Socket events](#socket-events)
@@ -57,13 +58,12 @@ Vite normally serves the app at `http://localhost:5173`. The backend must be run
 
 ```dotenv
 VITE_SERVER=http://localhost:4000/api/v1
+VITE_SOCKET_SERVER=http://localhost:4000
 ```
 
-Restart Vite after changing environment files. The existing `sample.env` is a placeholder, not a complete working configuration. `.env` and `*.local` files are ignored by Git; check `.gitignore` before adding other environment filenames.
+`VITE_SOCKET_SERVER` is optional. When it is unset, the frontend derives the socket origin from `VITE_SERVER` (so the example above connects to `http://localhost:4000`). Set it separately when the Socket.IO server is hosted at another origin. Restart Vite after changing environment files. The existing `sample.env` is a placeholder, not a complete working configuration. `.env` and `*.local` files are ignored by Git; check `.gitignore` before adding other environment filenames.
 
 Do not put passwords, private keys, admin secrets, or other credentials in `VITE_*` variables. Vite embeds these values into browser-delivered code.
-
-**Socket URL:** `src/socket.jsx` currently connects directly to `http://localhost:4000`. Although `sample.env` and `src/constants/config.js` refer to `SOCKET_SERVER`, the provider does not use that value. A hosted frontend therefore needs a code/configuration change before its socket connection can target a hosted backend. Vite exposes client variables by default only when their names start with `VITE_`.
 
 ## Commands
 
@@ -86,6 +86,7 @@ src/
   socket.jsx                  Socket.IO context/provider and socket hook
   assets/                     Frontend assets and notes
   components/
+    ai/                       Reusable AI reply, summary, and chat-history UI
     auth/                     Route access wrapper
     dialogs/                  File, group, and chat action dialogs/menus
     layouts/                  Main chat layout, headers, loaders, admin layout
@@ -111,7 +112,8 @@ src/
 | `src/App.jsx` | On startup, requests `/user/myprofile`, stores the current user, configures routes, and lazy-loads page components. The authenticated route tree is wrapped in `SocketProvider` and `ProtectRoute`. |
 | `src/main.jsx` | Mounts React under `StrictMode`, Redux `Provider`, `HelmetProvider`, and MUI `CssBaseline`. |
 | `src/components/layouts/AppLayout.jsx` | Shared user-app shell: top navigation, responsive chat list, profile panel, delete menu, online-user events, unread alerts, and chat-list refresh. |
-| `src/pages/Chat.jsx` | Loads chat details/history, displays `ChatHeader` and messages, joins/leaves chats, sends messages, and handles typing/message socket events. |
+| `src/pages/Chat.jsx` | Loads chat details/history, displays `ChatHeader` and messages, joins/leaves chats, sends messages, and handles typing, message, and receipt socket events. |
+| `src/components/shared/MessageComponent.jsx` | Renders chat messages and sender-side sent, delivered, and read ticks. |
 | `src/pages/Group.jsx` | Lists and manages groups, loads group members, and presents rename, add-member, remove-member, and delete flows. |
 | `src/redux/api/api.js` | RTK Query base URL, HTTP endpoints, credentials, cache tags, and generated hooks. |
 | `src/redux/store.js` | Combines `auth`, `misc`, `chat`, and RTK Query reducers and middleware. |
@@ -156,7 +158,21 @@ User routes are protected by `ProtectRoute` and wrapped by the socket provider. 
 
 RTK Query requests use `credentials: "include"`. Login, registration, profile checks, logout, and admin requests use Axios with `withCredentials: true`. If requests work in a REST client but fail in the browser, inspect the browser's Network tab, the cookie domain/same-site settings, and backend CORS credentials/origin settings.
 
-Chat history is requested in pages; `6pp`'s `useInfiniteScrollTop` loads earlier pages as the message list is scrolled upward. Newly received messages are appended from socket events. Typing state is emitted while the composer changes and expires after a short timeout.
+Chat history is requested in pages; `6pp`'s `useInfiniteScrollTop` loads earlier pages as the message list is scrolled upward. Newly received messages are appended from socket events. Typing state is emitted while the composer changes and expires after a short timeout. Message sends are optimistic: the message appears in the conversation while the server persists it, then the sender receives a success or failure acknowledgement.
+
+## Message delivery and read receipts
+
+Ticks appear next to the timestamp on messages sent by the current user:
+
+| Tick | Meaning |
+| --- | --- |
+| One gray tick | The backend saved the message. |
+| Two gray ticks | Every other member of the chat has a connected authenticated socket and received the message. |
+| Two blue ticks | Every other member of the chat has opened that conversation and the backend marked the message as read. |
+
+In group conversations, the status reflects all other chat members, not just one recipient. Messages remain at one gray tick while any recipient is offline. Opening a chat also marks earlier unread incoming messages as read. Receipt IDs and status updates come from the authenticated backend; clients do not choose the recipient list. Receipt changes are rendered on the message itself and are not stored in the frontend Redux state.
+
+Text messages are sent over the `NEW_MESSAGE` socket event and acknowledged after persistence. Attachment messages use the `POST chat/message` HTTP endpoint; the resulting live message includes its initial receipt status. The frontend listens for `MESSAGE_STATUS` to update ticks as other members receive or read messages. Receipt fields are part of backend message records, so run the matching backend version alongside this frontend.
 
 ## HTTP API usage
 
@@ -239,6 +255,7 @@ The event strings are defined in `src/constants/event.js` and mirrored by the ba
 | --- | --- |
 | `CHAT_JOINED`, `CHAT_LEAVED` | Notify the backend when opening/closing the active chat; backend updates presence. |
 | `NEW_MESSAGE` | Send a message and receive new messages for the active chat. |
+| `MESSAGE_STATUS` | Update sent-message ticks as recipients receive or read each message. |
 | `START_TYPING`, `STOP_TYPING` | Publish and display typing indicators. |
 | `ONLINE_USERS` | Update online indicators in the chat list. |
 | `NEW_MESSAGE_ALERT` | Increment unread counts for chats other than the active chat. |
@@ -248,26 +265,25 @@ The event strings are defined in `src/constants/event.js` and mirrored by the ba
 | `USER_AUDIO_CALL`, `ACCEPT_AUDIO_CALL`, `NEW_AUDIO_CALL_OFFER`, `NEW_AUDIO_CALL_ANSWER`, `ICE_CANDIDATE`, `END_AUDIO_CALL` | Incoming calls, WebRTC offer/answer/ICE signaling, and call teardown. See [Audio calling](#audio-calling) for payloads and call order. |
 | `NEW_ATTACHMENT` | Declared as an event name; attachment upload currently uses the HTTP mutation. |
 
-`AppLayout.jsx` subscribes to global chat-list/presence events. `Chat.jsx` subscribes to active-chat messages, typing events, and alerts. `useSocketEvent` removes listeners when the component effect is cleaned up.
+`AppLayout.jsx` subscribes to global chat-list/presence events. `Chat.jsx` subscribes to active-chat messages, message receipts, typing events, and alerts. `useSocketEvent` removes listeners when the component effect is cleaned up.
 
 ## Development and debugging
 
 1. **Blank page or loading screen:** check the browser console and the `/user/myprofile` request. A failed profile request intentionally clears the user session and can send the browser to `/login`.
 2. **HTTP requests fail:** confirm `.env.local` has the backend API base including `/api/v1`, restart Vite, and inspect the request URL/status in DevTools. Check backend CORS and credentialed-cookie configuration.
-3. **Socket events do not arrive:** the current socket provider targets `http://localhost:4000` regardless of `SOCKET_SERVER`. Verify that URL is reachable from the browser and that the backend accepts the session cookie.
-4. **Messages do not appear:** check both the `chat/message/:id` history request and socket events. A new message is emitted over Socket.IO; attachments use the `chat/message` HTTP endpoint.
-5. **Attachment behavior:** `FileMenu.jsx` accepts up to five files per selection and sends them as repeated `files` fields plus `chatId`. The backend must be configured for its upload/storage integration.
-6. **Admin page redirects:** confirm the admin verification/session request succeeds; `AdminLayout` redirects when `auth.isAdmin` is false.
-7. **Changes do not refresh lists:** inspect RTK Query `providesTags`/`invalidatesTags` in `src/redux/api/api.js` and the relevant component's query lifecycle.
-8. **Run checks:** `npm run build` validates the production bundle; `npm run lint` reports ESLint findings. No automated test command is currently configured.
+3. **Socket events do not arrive:** check that `VITE_SOCKET_SERVER` (or the origin derived from `VITE_SERVER`) is reachable from the browser, restart Vite after changing environment values, and verify that the backend accepts the session cookie.
+4. **Message ticks do not update:** use matching frontend and backend versions, check the browser Network/Socket.IO connection and backend logs, and confirm recipients are authenticated on that same socket server. Delivery requires a connected recipient socket; blue read ticks require the recipient to open the chat. In a group, all other members must meet the relevant condition.
+5. **Messages do not appear:** check both the `chat/message/:id` history request and socket events. Text messages use the `NEW_MESSAGE` socket event; attachments use the `chat/message` HTTP endpoint.
+6. **Attachment behavior:** `FileMenu.jsx` accepts up to five files per selection and sends them as repeated `files` fields plus `chatId`. The backend must be configured for its upload/storage integration.
+7. **Admin page redirects:** confirm the admin verification/session request succeeds; `AdminLayout` redirects when `auth.isAdmin` is false.
+8. **Changes do not refresh lists:** inspect RTK Query `providesTags`/`invalidatesTags` in `src/redux/api/api.js` and the relevant component's query lifecycle.
+9. **Run checks:** `npm run build` validates the production bundle; `npm run lint` reports ESLint findings. No automated test command is currently configured.
 
 ## Current limitations
 
 These are code-level observations to help set expectations; they are not configuration instructions:
 
 - Audio calling uses WebRTC signaling and peer-to-peer audio as described in [Audio calling](#audio-calling). Video calling is not implemented; the video icon handler is empty.
-- The socket provider hard-codes `http://localhost:4000`; the exported `socket_sever` value is not used, and `SOCKET_SERVER` is not a Vite-exposed variable as named in `sample.env`.
-- `geOrSaveFromStorage` in `src/lib/features.js` has its local-storage reads/writes commented out, so unread-alert persistence is not implemented despite its call sites.
 - Group member addition is incomplete: `AddMemberDialog.jsx` uses fixture users and has no add-member mutation wired into its submit handler. Also, `misc` defines `isAddMembers`, while `Group.jsx` checks `isAddMember`, so the dialog visibility flag does not match.
 - The `newGroup` mutation invalidates the `Chats` tag while the API declares `Chat`; verify/refetch behavior after group creation if the existing chat list looks stale.
 - `fileFormat` in `src/lib/features.js` classifies extensions by string checks; its current video checks precede the audio checks, and common audio extensions such as `.mp3`/`.wav` are not explicitly classified.
